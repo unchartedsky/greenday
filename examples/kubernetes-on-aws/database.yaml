@@ -54,7 +54,6 @@ spec:
         namespace: default
         labels:
           app: mysql
-          group: news-admin
       spec:
         accessModes:
           - ReadWriteOnce
