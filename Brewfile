@@ -1,0 +1,5 @@
+brew 'kubectl'
+brew 'kubernetes-helm'
+brew 'jq'
+brew 'sops'
+brew 'doctl'
