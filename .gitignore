@@ -53,3 +53,7 @@ remote/
 # .secrets/**/*.yml
 !.secrets/**/*.enc.*
 # !.secrets/**/*.enc.ym
+
+
+# ETC
+tmp/

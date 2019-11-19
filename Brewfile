@@ -12,3 +12,4 @@ brew 'doctl'
 # Utils
 brew 'jq'
 brew 'sops'
+brew 'make'
