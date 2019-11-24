@@ -16,3 +16,7 @@ helm template \
 kubectl apply --recursive --filename ./manifests/
 wordpress
 ```
+
+# Ref
+
+* [Using Helm without Tiller - Giant Swarm](https://blog.giantswarm.io/what-you-yaml-is-what-you-get/)

@@ -20,6 +20,14 @@ install_direnv() {
   fi
 }
 
+install_brew() {
+  type brew &>/dev/null || /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+  brew bundle
+}
+
 sudo -v
+
+install_brew
 
 install_direnv
