@@ -48,12 +48,18 @@ Temporary Items
 
 remote/
 
+# Kubernetes
+.helm/
+
 # Credentials and secrets
 .secrets/**/*
-# .secrets/**/*.yml
 !.secrets/**/*.enc.*
-# !.secrets/**/*.enc.ym
 
+**/secrets/**/*.yml
+**/secrets/**/*.yaml
+!**/secrets/**/*.enc.yml
+!**/secrets/**/*.enc.yaml
 
 # ETC
+Brewfile.lock.json
 tmp/
