@@ -106,6 +106,9 @@ metadata:
   annotations:
     service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
     service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
+
+    external-dns.alpha.kubernetes.io/hostname: wp.unchartedsky.com
+    external-dns.alpha.kubernetes.io/ttl: "120"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: "Local"
