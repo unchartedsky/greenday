@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: macgyver
+  namespace: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: macgyver
+  template:
+    metadata:
+      labels:
+        app: macgyver
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      containers:
+      - name: macgyver
+        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
