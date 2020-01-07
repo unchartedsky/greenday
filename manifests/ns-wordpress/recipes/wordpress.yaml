@@ -106,9 +106,11 @@ metadata:
   annotations:
     service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
     service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
+    # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
 
     external-dns.alpha.kubernetes.io/hostname: wp.unchartedsky.com
     external-dns.alpha.kubernetes.io/ttl: "120"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: "Local"
@@ -117,10 +119,10 @@ spec:
       port: 80
       targetPort: http
       # protocol: TCP
-    - name: https
-      port: 443
-      targetPort: https
-      # protocol: TCP
+    # - name: https
+    #   port: 443
+    #   targetPort: https
+    #   # protocol: TCP
   selector:
     app: "team7-wordpress"
   # loadBalancerSourceRanges:
@@ -202,7 +204,7 @@ spec:
       #     subPath: wordpress-vhosts.conf
       containers:
       - name: wordpress
-        image: docker.io/bitnami/wordpress-nginx:5-debian-9
+        image: docker.io/bitnami/wordpress-nginx:5.3.2-debian-9-r14
         imagePullPolicy: "IfNotPresent"
         command: ['sh', '-c', 'cp -f /opt/tmp/*.conf /opt/bitnami/nginx/conf/server_blocks/ && /app-entrypoint.sh /run.sh']
         # args: ['/run.sh']
@@ -246,12 +248,12 @@ spec:
         - name: WORDPRESS_TABLE_PREFIX
           value: "wp_"
         - name: WORDPRESS_SCHEME
-          value: "http"
+          value: "https"
         ports:
         - name: http
           containerPort: 80
-        - name: https
-          containerPort: 443
+        # - name: https
+        #   containerPort: 443
         livenessProbe:
           httpGet:
             path: /wp-login.php
