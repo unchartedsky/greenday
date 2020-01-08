@@ -1,0 +1,198 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: discourse
+  labels:
+    app: postgresql
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql
+  selector:
+    app: postgresql
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgresql
+  namespace: discourse
+  labels:
+    app: postgresql
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "32Gi"
+  # storageClassName: "default"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  namespace: discourse
+  labels:
+    app: postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: "postgres:9.5"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+          # Required for pg_isready in the health probes.
+        - name: PGUSER
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: ""
+        - name: POSTGRES_INITDB_ARGS
+          value: ""
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql
+              key: postgres-password
+        - name: DATADOG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql
+              key: datadog-password
+        - name: POD_IP
+          valueFrom: { fieldRef: { fieldPath: status.podIP } }
+        ports:
+        - name: postgresql
+          containerPort: 5432
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready --host $POD_IP
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+          requests:
+            cpu: 300m
+            memory: 256Mi
+        volumeMounts:
+        - name: init-d-volume
+          mountPath: /docker-entrypoint-initdb.d/
+        - name: data
+          mountPath: /var/lib/postgresql/data/pgdata
+          subPath: postgresql-db
+      - name: metrics
+        image: "wrouesnel/postgres_exporter:v0.1.1"
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: DATA_SOURCE_NAME
+          value: postgresql://postgres@127.0.0.1:5432?sslmode=disable
+        ports:
+        - name: metrics
+          containerPort: 9187
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+      volumes:
+      - name: init-d-volume
+        projected:
+          sources:
+          - configMap:
+              name: postgres-init-config
+              items:
+              - key: init-discourse.sh
+                path: init-discourse.sh
+      - name: data
+        persistentVolumeClaim:
+          claimName: postgresql
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-config
+  namespace: discourse
+data:
+  init-discourse.sh: |
+    #!/bin/bash -x
+    set -e
+
+    createdb discourse || true
+
+    psql -v ON_ERROR_STOP=1 --username "postgres" template1 <<-EOSQL
+      create extension if not exists hstore;
+      create extension if not exists pg_trgm;
+    EOSQL
+
+    psql -v ON_ERROR_STOP=0 --username "postgres" discourse <<-EOSQL
+      create user discourse with password '${POSTGRES_PASSWORD}';
+      grant all privileges on database discourse to discourse;
+    EOSQL
+
+    psql -v ON_ERROR_STOP=1 --username "postgres" discourse <<-EOSQL
+      alter schema public owner to discourse;
+      create extension if not exists hstore;
+      create extension if not exists pg_trgm;
+    EOSQL
+
+    psql -v ON_ERROR_STOP=1 --username "postgres" <<-EOSQL
+      update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = 'discourse' AND encoding = pg_char_to_encoding('SQL_ASCII');
+    EOSQL
+
+    psql -v ON_ERROR_STOP=1 --username "postgres" drone <<-EOSQL
+      create user datadog with password '${DATADOG_PASSWORD}';
+      grant SELECT ON pg_stat_database to datadog;
+    EOSQL
+---
+# 이 네트워크 정책을 활성화하면 ELB를 통해 Redis에 접근하는 기능도 막힌다.
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: postgresql-allow
+  namespace: discourse
+spec:
+  podSelector:
+    matchLabels:
+      app: postgresql
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: discourse
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
