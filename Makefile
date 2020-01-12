@@ -1,7 +1,8 @@
 SHELL := /bin/bash
 
-ENC_SECRETS = $(shell find "${SECRETS_DIR}" -type f -and \( -name '*.enc' -or -name '*.enc.*' \) -not -path ".")
-SECRETS = $(shell find "${SECRETS_DIR}" -type f -not \( -name '*.enc' -or -name '*.enc.*' \) -not -path ".")
+ENC_SECRETS = $(shell find manifests/*/secrets "${SECRETS_DIR}" -type f -and \( -name '*.enc' -or -name '*.enc.*' \) -not -path ".")
+SECRETS = $(shell find manifests/*/secrets "${SECRETS_DIR}" -type f -not \( -name '*.enc' -or -name '*.enc.*' \) -not -path ".")
+
 # GIT_COMMIT_ID=$(shell git rev-parse --short HEAD)
 # export GIT_COMMIT_ID
 # GIT_BRANCH=$(shell git describe --abbrev=1 --tags --always)

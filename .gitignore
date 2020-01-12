@@ -63,3 +63,4 @@ remote/
 # ETC
 Brewfile.lock.json
 tmp/
+.direnv/
