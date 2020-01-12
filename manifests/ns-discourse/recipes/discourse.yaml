@@ -10,7 +10,7 @@ metadata:
     service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
     # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
 
-    external-dns.alpha.kubernetes.io/hostname: discourse.unchartedsky.com
+    external-dns.alpha.kubernetes.io/hostname: discourse.unchartedsky.com,forum.unchartedsky.com
     external-dns.alpha.kubernetes.io/ttl: "120"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
