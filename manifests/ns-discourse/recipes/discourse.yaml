@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: discourse
+  namespace: discourse
+  labels:
+    app: discourse
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
+    # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
+
+    external-dns.alpha.kubernetes.io/hostname: discourse.unchartedsky.com
+    external-dns.alpha.kubernetes.io/ttl: "120"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  # type: NodePort
+  type: LoadBalancer
+  externalTrafficPolicy: "Local"
+  selector:
+    app: discourse
+  ports:
+  - port: 80
+    targetPort: 80
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: discourse
+  namespace: discourse
+  labels:
+    app: discourse
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # storageClassName: default
+  resources:
+    requests:
+        storage: 16Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discourse
+  namespace: discourse
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: discourse
+  template:
+    metadata:
+      labels:
+        app: discourse
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      initContainers:
+      - name: db-migrations
+        image: docker.pkg.github.com/unchartedsky/discourse/discourse:3b9eaee
+        imagePullPolicy: IfNotPresent
+        command:
+        - bash
+        - -c
+        - "(cd /var/www/discourse && bundle exec rake db:migrate) || true"
+        # - admin:create
+        envFrom:
+        - secretRef:
+            name: discourse
+        env:
+        - name: DISCOURSE_DB_USERNAME
+          value: discourse
+        - name: DISCOURSE_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql
+              key: postgres-password
+        - name: DISCOURSE_DB_HOST
+          value: postgresql
+        - name: DISCOURSE_DB_NAME
+          value: discourse
+        - name: DISCOURSE_DB_SOCKET
+          value: ""
+        - name: DISCOURSE_REDIS_HOST
+          value: redis
+        - name: DISCOURSE_REDIS_PORT
+          value: "6379"
+        - name: DISCOURSE_HOSTNAME
+          value: forum.unchartedsky.com
+      containers:
+      - name: web
+        image: docker.pkg.github.com/unchartedsky/discourse/discourse:3b9eaee
+        imagePullPolicy: IfNotPresent
+        command: ["/sbin/boot"]
+        ports:
+        - name: http
+          containerPort: 80
+        envFrom:
+        - secretRef:
+            name: discourse
+        env:
+        - name: DISCOURSE_DB_USERNAME
+          value: discourse
+        - name: DISCOURSE_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql
+              key: postgres-password
+        - name: DISCOURSE_DB_HOST
+          value: postgresql
+        - name: DISCOURSE_DB_NAME
+          value: discourse
+        - name: DISCOURSE_DB_SOCKET
+          value: ""
+        - name: DISCOURSE_REDIS_HOST
+          value: redis
+        - name: DISCOURSE_REDIS_PORT
+          value: "6379"
+        - name: DISCOURSE_HOSTNAME
+          value: discourse.unchartedsky.com
+        readinessProbe:
+          httpGet:
+            path: /srv/status
+            port: http
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+        - name: discourse-storage
+          mountPath: /shared
+      volumes:
+      - name: discourse-storage
+        persistentVolumeClaim:
+          claimName: discourse

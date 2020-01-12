@@ -1,16 +1,16 @@
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: redis
-  namespace: discourse
-  labels:
-    app: redis
-spec:
-  accessModes:
-    - "ReadWriteOnce"
-  resources:
-    requests:
-      storage: "32Gi"
+# kind: PersistentVolumeClaim
+# apiVersion: v1
+# metadata:
+#   name: redis
+#   namespace: discourse
+#   labels:
+#     app: redis
+# spec:
+#   accessModes:
+#     - "ReadWriteOnce"
+#   resources:
+#     requests:
+#       storage: "4Gi"
 
 ---
 apiVersion: apps/v1
@@ -58,19 +58,19 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 1
         resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
           limits:
             cpu: 1000m
             memory: 1024Mi
-          requests:
-            cpu: 200m
-            memory: 256Mi
-        volumeMounts:
-        - name: redis-data
-          mountPath: /bitnami
-          subPath:
+        # volumeMounts:
+        # - name: redis-data
+        #   mountPath: /bitnami
+        #   subPath:
       - name: metrics
         image: "oliver006/redis_exporter:v0.11"
-        imagePullPolicy: "Always"
+        imagePullPolicy: IfNotPresent
         env:
         - name: REDIS_ALIAS
           value: redis
@@ -78,16 +78,16 @@ spec:
         - name: metrics
           containerPort: 9121
         resources:
-          limits:
-            cpu: 300m
-            memory: 64Mi
           requests:
-            cpu: 100m
+            cpu: 30m
             memory: 32Mi
-      volumes:
-      - name: redis-data
-        persistentVolumeClaim:
-          claimName: redis
+          limits:
+            cpu: 100m
+            memory: 64Mi
+      # volumes:
+      # - name: redis-data
+      #   persistentVolumeClaim:
+      #     claimName: redis
 
 ---
 apiVersion: v1

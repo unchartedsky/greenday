@@ -30,7 +30,7 @@ spec:
     - "ReadWriteOnce"
   resources:
     requests:
-      storage: "32Gi"
+      storage: "2Gi"
   # storageClassName: "default"
 
 ---
@@ -43,6 +43,8 @@ metadata:
     app: postgresql
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: postgresql
@@ -53,7 +55,7 @@ spec:
     spec:
       containers:
       - name: postgresql
-        image: "postgres:9.5"
+        image: "postgres:10"
         imagePullPolicy: IfNotPresent
         env:
         - name: POSTGRES_USER
@@ -101,12 +103,12 @@ spec:
           timeoutSeconds: 3
           periodSeconds: 5
         resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
           limits:
             cpu: 1000m
             memory: 512Mi
-          requests:
-            cpu: 300m
-            memory: 256Mi
         volumeMounts:
         - name: init-d-volume
           mountPath: /docker-entrypoint-initdb.d/
@@ -114,7 +116,7 @@ spec:
           mountPath: /var/lib/postgresql/data/pgdata
           subPath: postgresql-db
       - name: metrics
-        image: "wrouesnel/postgres_exporter:v0.1.1"
+        image: "wrouesnel/postgres_exporter:v0.8.0"
         imagePullPolicy: "IfNotPresent"
         env:
         - name: DATA_SOURCE_NAME
@@ -124,6 +126,9 @@ spec:
           containerPort: 9187
         resources:
           requests:
+            cpu: 30m
+            memory: 32Mi
+          limits:
             cpu: 50m
             memory: 64Mi
       volumes:

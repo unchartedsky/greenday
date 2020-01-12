@@ -41,10 +41,10 @@ spec:
               key: CF_API_TOKEN_EXTERNAL_DNS
         resources:
           requests:
-            cpu: 100m
-            memory: 32Mi
+            cpu: 30m
+            memory: 16Mi
           limits:
-            cpu: 300m
+            cpu: 200m
             memory: 32Mi
       tolerations:
       - key: node-role.kubernetes.io/master

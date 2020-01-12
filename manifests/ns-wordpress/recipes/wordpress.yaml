@@ -67,7 +67,7 @@ spec:
     - "ReadWriteOnce"
   resources:
     requests:
-      storage: "10Gi"
+      storage: "12Gi"
 ---
 # Source: wordpress/charts/mariadb/templates/master-svc.yaml
 apiVersion: v1
@@ -174,7 +174,7 @@ spec:
       app: "team7-wordpress"
       release: "team7"
   strategy:
-    type: RollingUpdate
+    type: Recreate
   replicas: 1
   template:
     metadata:
@@ -283,8 +283,11 @@ spec:
           mountPath: /opt/tmp
         resources:
           requests:
-            cpu: 300m
-            memory: 512Mi
+            cpu: 100m
+            memory: 257Mi
+          limits:
+            cpu: 1000m
+            memory: 2048Mi
       volumes:
       - name: wordpress-data
         persistentVolumeClaim:
@@ -337,7 +340,6 @@ spec:
                   matchLabels:
                     app: mariadb
                     release: team7
-      initContainers:
       containers:
         - name: "mariadb"
           image: docker.io/bitnami/mariadb:10.3.20-debian-9-r0
@@ -399,7 +401,7 @@ spec:
           - "ReadWriteOnce"
         resources:
           requests:
-            storage: "8Gi"
+            storage: "2Gi"
 ---
 # Source: wordpress/templates/tests/test-mariadb-connection.yaml
 apiVersion: v1

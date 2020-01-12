@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: macgyver
-  namespace: wordpress
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
@@ -23,8 +23,8 @@ spec:
         args: [ "while true; do sleep 30; done;" ]
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 30m
+            memory: 32Mi
           limits:
             cpu: 1000m
             memory: 512Mi

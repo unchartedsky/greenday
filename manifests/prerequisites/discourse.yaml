@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: discourse
+  labels:
+    name: discourse
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pod-limit
+  namespace: discourse
+spec:
+  hard:
+    pods: "30"
