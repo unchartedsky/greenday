@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wp-cron-scripts
+  namespace: plaintext
+data:
+  run.sh: |
+    #!/bin/bash -xe
+    wget -q "http://wordpress/wp-cron.php?doing_wp_cron&702c619152a0d0a447ea553a205a4a48"
+
+---
+# 테스트용...
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-cron-tester
+  namespace: plaintext
+spec:
+  selector:
+    matchLabels:
+      app: wp-cron
+  replicas: 0
+  template:
+    metadata:
+      labels:
+        app: wp-cron
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      containers:
+      - name: wp-cron-tester
+        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:33f7415
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        volumeMounts:
+          - name: scripts-d
+            mountPath: /scripts
+        resources:
+          requests:
+            cpu: 30m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 32Mi
+      volumes:
+      - name: scripts-d
+        projected:
+          defaultMode: 500
+          sources:
+          - configMap:
+              name: wp-cron-scripts
+              items:
+              - key: run.sh
+                path: run.sh
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: wp-cron
+  namespace: plaintext
+  labels:
+    app: wp-cron
+spec:
+  # At every 15th minute
+  # ref: https://crontab.guru/#*/15_*_*_*_*
+  schedule: "*/15 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: wp-cron
+        spec:
+          imagePullSecrets:
+          - name: github-andromedarabbit
+          containers:
+          - name: wp-cron
+            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+            args:
+            - /bin/bash
+            - -c
+            - "/scripts/run.sh"
+            volumeMounts:
+            - name: scripts-d
+              mountPath: /scripts
+          volumes:
+          - name: scripts-d
+            projected:
+              defaultMode: 500
+              sources:
+              - configMap:
+                  name: wp-cron-scripts
+                  items:
+                  - key: run.sh
+                    path: run.sh
+          restartPolicy: Never
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
