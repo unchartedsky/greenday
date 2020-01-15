@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plaintext
+  labels:
+    name: plaintext
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pod-limit
+  namespace: plaintext
+spec:
+  hard:
+    pods: "30"

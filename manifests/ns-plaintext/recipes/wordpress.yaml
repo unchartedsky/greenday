@@ -1,56 +1,3 @@
----
-# Source: wordpress/charts/mariadb/templates/master-configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mariadb
-  namespace: plaintext
-  labels:
-    app: "mariadb"
-    component: "master"
-    chart: "mariadb-7.0.1"
-    release: "team7"
-    heritage: "Helm"
-data:
-  my.cnf: |-
-    [mysqld]
-    skip-name-resolve
-    explicit_defaults_for_timestamp
-    basedir=/opt/bitnami/mariadb
-    plugin_dir=/opt/bitnami/mariadb/plugin
-    port=3306
-    socket=/opt/bitnami/mariadb/tmp/mysql.sock
-    tmpdir=/opt/bitnami/mariadb/tmp
-    max_allowed_packet=16M
-    bind-address=0.0.0.0
-    pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
-    log-error=/opt/bitnami/mariadb/logs/mysqld.log
-    character-set-server=UTF8
-    collation-server=utf8_general_ci
-
-    [client]
-    port=3306
-    socket=/opt/bitnami/mariadb/tmp/mysql.sock
-    default-character-set=UTF8
-    plugin_dir=/opt/bitnami/mariadb/plugin
-
-    [manager]
-    port=3306
-    socket=/opt/bitnami/mariadb/tmp/mysql.sock
-    pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
----
-# Source: wordpress/charts/mariadb/templates/tests.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mariadb-tests
-  namespace: plaintext
-data:
-  run.sh: |-
-    @test "Testing MariaDB is accessible" {
-      mysql -h mariadb -uroot -p$MARIADB_ROOT_PASSWORD -e 'show databases;'
-    }
----
 # Source: wordpress/templates/pvc.yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -69,29 +16,6 @@ spec:
     requests:
       storage: "12Gi"
 ---
-# Source: wordpress/charts/mariadb/templates/master-svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: mariadb
-  namespace: plaintext
-  labels:
-    app: "mariadb"
-    component: "master"
-    chart: "mariadb-7.0.1"
-    release: "team7"
-    heritage: "Helm"
-spec:
-  type: ClusterIP
-  ports:
-  - name: mysql
-    port: 3306
-    targetPort: mysql
-  selector:
-    app: "mariadb"
-    component: "master"
-    release: "team7"
----
 # Source: wordpress/templates/svc.yaml
 apiVersion: v1
 kind: Service
@@ -108,7 +32,7 @@ metadata:
     service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
     # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
 
-    external-dns.alpha.kubernetes.io/hostname: wp.unchartedsky.com
+    external-dns.alpha.kubernetes.io/hostname: andromedarabbit.net
     external-dns.alpha.kubernetes.io/ttl: "120"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
@@ -131,29 +55,191 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: wordpress-scripts
+  namespace: plaintext
+data:
+  go.sh: |
+    #!/bin/bash -xe
+    cp -f /opt/tmp/php-fpm.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp/http.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp/nginx.conf /opt/bitnami/nginx/conf/
+
+    /app-entrypoint.sh /run.sh
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: wordpress-config
   namespace: plaintext
 data:
-  https.conf: |-
+  nginx.conf: |-
+    # Based on https://www.nginx.com/resources/wiki/start/topics/examples/full/#nginx-conf
+    user              nginx nginx;  ## Default: nobody
+
+    worker_processes  auto;
+    error_log         "/opt/bitnami/nginx/logs/error.log" warn;
+    pid               "/opt/bitnami/nginx/tmp/nginx.pid";
+
+    events {
+      worker_connections  2048;
+      multi_accept        on;
+      use epoll;
+    }
+
+    http {
+      include       mime.types;
+      default_type  application/octet-stream;
+      log_format    main '$remote_addr - $remote_user [$time_local] '
+                        '"$request" $status  $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+      # access_log    "/opt/bitnami/nginx/logs/access.log" main;
+      access_log    off;
+      add_header    X-Frame-Options SAMEORIGIN;
+
+      client_body_temp_path  "/opt/bitnami/nginx/tmp/client_body" 1 2;
+      proxy_temp_path        "/opt/bitnami/nginx/tmp/proxy" 1 2;
+      fastcgi_temp_path      "/opt/bitnami/nginx/tmp/fastcgi" 1 2;
+      scgi_temp_path         "/opt/bitnami/nginx/tmp/scgi" 1 2;
+      uwsgi_temp_path        "/opt/bitnami/nginx/tmp/uwsgi" 1 2;
+
+      sendfile           on;
+      tcp_nopush         on;
+      tcp_nodelay        off;
+      gzip               on;
+      gzip_http_version  1.0;
+      gzip_comp_level    2;
+      gzip_proxied       any;
+      gzip_types         text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+      keepalive_timeout  65;
+      ssl_protocols      TLSv1 TLSv1.1 TLSv1.2;
+      client_max_body_size 80M;
+
+      include  "/opt/bitnami/nginx/conf/server_blocks/*.conf";
+
+      # HTTP Server
+      server {
+        # port to listen on. Can also be set to an IP:PORT
+        listen  80;
+
+        location /status {
+            stub_status on;
+            access_log   off;
+            allow 127.0.0.1;
+            deny all;
+        }
+      }
+    }
+
+  php-fpm.conf: |-
+    # PHP-FPM FastCGI server
+    # network or unix domain socket configuration
+
+    upstream php {
+            server 127.0.0.1:9000;
+            #server unix:/run/php-fpm/www.sock;
+    }
+
+  http.conf: |-
+    proxy_cache_path /opt/bitnami/nginx/tmp keys_zone=cache:10m levels=1:2 inactive=600s max_size=100m;
 
     server {
-      listen 0.0.0.0:80 ;
+      listen 0.0.0.0:80;
       server_name _;
 
-      root /opt/bitnami/wordpress;
+      proxy_cache cache;
+      proxy_cache_lock on;
+      proxy_cache_valid 200 1s;
+      proxy_cache_use_stale updating;
+
+      root /bitnami/wordpress;
       index index.php;
+
+      client_max_body_size 20M;
+      client_body_buffer_size 20M;
+
+      if (!-e $request_filename) {
+        # rewrite /wp-admin$ https://$host$uri/ permanent;
+        rewrite ^/(.+)$ /index.php?q=$1 last;
+      }
+
+      location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+      }
+
+      location = /robots.txt {
+          allow all;
+          log_not_found off;
+          access_log off;
+      }
+
+      error_page  404              /404.html;
+
+      # redirect server error pages to the static page /50x.html
+      #
+      error_page   500 502 503 504  /50x.html;
+      location = /50x.html {
+          root   /bitnami/wordpress;
+      }
+
       location / {
         try_files $uri $uri/ /index.php?q=$uri&$args;
       }
-      if (!-e $request_filename)
-      {
-        rewrite ^/(.+)$ /index.php?q=$1 last;
+
+      # deny access to .htaccess files, if Apache's document root
+      # concurs with nginx's one
+      #
+      location ~ /\.ht {
+          deny  all;
       }
+
       location ~ \.php$ {
-        fastcgi_pass localhost:9000;
+        root           /bitnami/wordpress;
+        try_files $uri =404;
+
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+        #fastcgi_pass unix:/var/run/php-fpm/php5-fpm.sock;
+        fastcgi_pass php;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+        fastcgi_buffer_size 128k;
+        fastcgi_buffers 256 16k;
+        fastcgi_busy_buffers_size 256k;
+        fastcgi_temp_file_write_size 256k;
+
         include fastcgi_params;
+      }
+
+      # Expire rules for static content
+
+      # cache.appcache, your document html and data
+      location ~* \.(?:manifest|appcache|html?)$ {
+        expires -1;
+        # access_log logs/static.log; # I don't usually include a static log
+      }
+
+      # Feed
+      location ~* \.(?:rss|atom)$ {
+        expires 1h;
+        add_header Cache-Control "public";
+      }
+
+      # Media: images, icons, video, audio, HTC
+      location ~* \.(jpg|jpeg|gif|png|ogg|ogv|svg|svgz|eot|otf|woff|mp4|ttf|ico|zip|tgz|gz|rar|bz2|doc|xls|exe|ppt|tar|mid|midi|wav|bmp|rtf)$ {
+          expires 1M;
+          log_not_found off;
+          access_log off;
+          add_header Cache-Control "public";
+      }
+
+      # CSS and Javascript
+      location ~* \.(?:css|js)$ {
+          expires 1y;
+          access_log off;
+          add_header Cache-Control "public";
       }
     }
 ---
@@ -206,19 +292,21 @@ spec:
       - name: wordpress
         image: docker.io/bitnami/wordpress-nginx:5.3.2-debian-9-r14
         imagePullPolicy: "IfNotPresent"
-        command: ['sh', '-c', 'cp -f /opt/tmp/*.conf /opt/bitnami/nginx/conf/server_blocks/ && /app-entrypoint.sh /run.sh']
+        args:
+        - /scripts/go.sh
+        # command: ['sh', '-c', 'cp -f /opt/tmp/*.conf /opt/bitnami/nginx/conf/server_blocks/ && curl --silent -Lo jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 && chmod +x ./jq && mv jq /usr/local/bin/jq && jq -r ".components .\"com.bitnami.wordpress\" .values .persistDir = \"/bitnami/wordpress/wordpress\"" /root/.nami/registry.json > /root/.nami/registry.json && /app-entrypoint.sh /run.sh']
         # args: ['/run.sh']
         # command: ["/bin/sh"]
         # args: ["-c", "while true; do echo hello; sleep 10;done"]
         env:
         - name: ALLOW_EMPTY_PASSWORD
-          value: "yes"
+          value: "no"
         - name: MARIADB_HOST
           value: mariadb
         - name: MARIADB_PORT_NUMBER
           value: "3306"
         - name: WORDPRESS_DATABASE_NAME
-          value: "bitnami_wordpress"
+          value: "wordpress"
         - name: WORDPRESS_DATABASE_USER
           value: "bn_wordpress"
         - name: WORDPRESS_DATABASE_PASSWORD
@@ -244,7 +332,7 @@ spec:
         - name: WORDPRESS_BLOG_NAME
           value: "Team7's Home!"
         - name: WORDPRESS_SKIP_INSTALL
-          value: "no"
+          value: "yes"
         - name: WORDPRESS_TABLE_PREFIX
           value: "wp_"
         - name: WORDPRESS_SCHEME
@@ -281,13 +369,15 @@ spec:
         #   subPath: wordpress-vhosts.conf
         - name: wordpress-config
           mountPath: /opt/tmp
+        - name: scripts-d
+          mountPath: /scripts
         resources:
           requests:
             cpu: 100m
             memory: 257Mi
           limits:
-            cpu: 1000m
-            memory: 2048Mi
+            cpu: 3000m
+            memory: 3072Mi
       volumes:
       - name: wordpress-data
         persistentVolumeClaim:
@@ -295,113 +385,16 @@ spec:
       - name: wordpress-config
         configMap:
           name: wordpress-config
----
-# Source: wordpress/charts/mariadb/templates/master-statefulset.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: mariadb
-  namespace: plaintext
-  labels:
-    app: mariadb
-    chart: mariadb-7.0.1
-    release: team7
-    heritage: Helm
-    component: master
-spec:
-  selector:
-    matchLabels:
-      app: mariadb
-      release: team7
-      component: master
-  serviceName: mariadb
-  replicas: 1
-  updateStrategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        app: mariadb
-        chart: mariadb-7.0.1
-        release: team7
-        component: master
-    spec:
-      serviceAccountName: default
-      securityContext:
-        fsGroup: 1001
-        runAsUser: 1001
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              podAffinityTerm:
-                topologyKey: kubernetes.io/hostname
-                labelSelector:
-                  matchLabels:
-                    app: mariadb
-                    release: team7
-      containers:
-        - name: "mariadb"
-          image: docker.io/bitnami/mariadb:10.3.20-debian-9-r0
-          imagePullPolicy: "IfNotPresent"
-          env:
-            - name: MARIADB_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mariadb
-                  key: mariadb-root-password
-            - name: MARIADB_USER
-              value: "bn_wordpress"
-            - name: MARIADB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mariadb
-                  key: mariadb-password
-            - name: MARIADB_DATABASE
-              value: "bitnami_wordpress"
-          ports:
-            - name: mysql
-              containerPort: 3306
-          livenessProbe:
-            exec:
-              command: ["sh", "-c", "exec mysqladmin status -uroot -p$MARIADB_ROOT_PASSWORD"]
-            initialDelaySeconds: 120
-            periodSeconds: 10
-            timeoutSeconds: 1
-            successThreshold: 1
-            failureThreshold: 3
-          readinessProbe:
-            exec:
-              command: ["sh", "-c", "exec mysqladmin status -uroot -p$MARIADB_ROOT_PASSWORD"]
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 1
-            successThreshold: 1
-            failureThreshold: 3
-          volumeMounts:
-            - name: data
-              mountPath: /bitnami/mariadb
-            - name: config
-              mountPath: /opt/bitnami/mariadb/conf/my.cnf
-              subPath: my.cnf
-      volumes:
-        - name: config
-          configMap:
-            name: mariadb
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-        labels:
-          app: "mariadb"
-          component: "master"
-          release: "team7"
-          heritage: "Helm"
-      spec:
-        accessModes:
-          - "ReadWriteOnce"
-        resources:
-          requests:
-            storage: "2Gi"
+      - name: scripts-d
+        projected:
+          defaultMode: 500
+          sources:
+          - configMap:
+              name: wordpress-scripts
+              items:
+              - key: go.sh
+                path: go.sh
+
 ---
 # Source: wordpress/templates/tests/test-mariadb-connection.yaml
 apiVersion: v1
@@ -422,7 +415,7 @@ spec:
       - name: MARIADB_PORT
         value: "3306"
       - name: WORDPRESS_DATABASE_NAME
-        value: "bitnami_wordpress"
+        value: "wordpress"
       - name: WORDPRESS_DATABASE_USER
         value: "bn_wordpress"
       - name: WORDPRESS_DATABASE_PASSWORD
@@ -431,51 +424,4 @@ spec:
             name: mariadb
             key: mariadb-password
     command: ["sh", "-c", "mysql --host=$MARIADB_HOST --port=$MARIADB_PORT --user=$WORDPRESS_DATABASE_USER --password=$WORDPRESS_DATABASE_PASSWORD"]
-  restartPolicy: Never
----
-# Source: wordpress/charts/mariadb/templates/test-runner.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: "mariadb-test-khkk9"
-  namespace: plaintext
-  annotations:
-    "helm.sh/hook": test-success
-spec:
-  initContainers:
-    - name: "test-framework"
-      image: "dduportal/bats:0.4.0"
-      command:
-        - "bash"
-        - "-c"
-        - |
-          set -ex
-          # copy bats to tools dir
-          cp -R /usr/local/libexec/ /tools/bats/
-      volumeMounts:
-      - mountPath: /tools
-        name: tools
-  containers:
-    - name: mariadb-test
-      image: docker.io/bitnami/mariadb:10.3.20-debian-9-r0
-      imagePullPolicy: "IfNotPresent"
-      command: ["/tools/bats/bats", "-t", "/tests/run.sh"]
-      env:
-        - name: MARIADB_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mariadb
-              key: mariadb-root-password
-      volumeMounts:
-      - mountPath: /tests
-        name: tests
-        readOnly: true
-      - mountPath: /tools
-        name: tools
-  volumes:
-  - name: tests
-    configMap:
-      name: mariadb-tests
-  - name: tools
-    emptyDir: {}
   restartPolicy: Never

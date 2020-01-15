@@ -25,6 +25,7 @@ spec:
         - --source=service
         - --source=ingress
         - --domain-filter=unchartedsky.com # will make ExternalDNS see only the hosted zones matching provided domain, omit to process all available hosted zones
+        - --domain-filter=andromedarabbit.net
         - --provider=cloudflare
         # - --cloudflare-proxied
         - --policy=upsert-only # would prevent ExternalDNS from deleting any records, omit to enable full synchronization

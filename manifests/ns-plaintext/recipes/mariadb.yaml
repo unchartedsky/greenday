@@ -1,0 +1,203 @@
+---
+# Source: wordpress/charts/mariadb/templates/master-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb
+  namespace: plaintext
+  labels:
+    app: "mariadb"
+    component: "master"
+    chart: "mariadb-7.0.1"
+    release: "team7"
+    heritage: "Helm"
+data:
+  my.cnf: |-
+    [mysqld]
+    skip-name-resolve
+    explicit_defaults_for_timestamp
+    basedir=/opt/bitnami/mariadb
+    plugin_dir=/opt/bitnami/mariadb/plugin
+    port=3306
+    socket=/opt/bitnami/mariadb/tmp/mysql.sock
+    tmpdir=/opt/bitnami/mariadb/tmp
+    bind-address=0.0.0.0
+    pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+    log-error=/opt/bitnami/mariadb/logs/mysqld.log
+    character-set-server=UTF8
+    collation-server=utf8_general_ci
+
+    tmp_table_size=256M
+    max_heap_table_size=256M
+    query_cache_limit=256M
+    query_cache_size=256M
+    query_cache_type=1
+    max_user_connections=45
+    max_connections=300
+    innodb_buffer_pool_size = 256M
+    thread_cache_size=128
+    key_buffer=64M
+    join_buffer_size=64M
+    max_connect_errors=20
+    max_allowed_packet=64M
+    table_cache=4096
+    sort_buffer_size=8M
+    read_buffer_size=8M
+    read_rnd_buffer_size=8M
+    myisam_sort_buffer_size=64M
+
+    slow-query-log-file=/var/log/mysql-slow.log
+    long_query_time=1
+
+    [client]
+    port=3306
+    socket=/opt/bitnami/mariadb/tmp/mysql.sock
+    default-character-set=UTF8
+    plugin_dir=/opt/bitnami/mariadb/plugin
+
+    [manager]
+    port=3306
+    socket=/opt/bitnami/mariadb/tmp/mysql.sock
+    pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+---
+# Source: wordpress/charts/mariadb/templates/tests.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-tests
+  namespace: plaintext
+data:
+  run.sh: |-
+    @test "Testing MariaDB is accessible" {
+      mysql -h mariadb -uroot -p$MARIADB_ROOT_PASSWORD -e 'show databases;'
+    }
+---
+# Source: wordpress/charts/mariadb/templates/master-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: plaintext
+  labels:
+    app: "mariadb"
+    component: "master"
+    chart: "mariadb-7.0.1"
+    release: "team7"
+    heritage: "Helm"
+spec:
+  type: ClusterIP
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: mysql
+  selector:
+    app: "mariadb"
+    component: "master"
+    release: "team7"
+---
+# Source: wordpress/charts/mariadb/templates/master-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+  namespace: plaintext
+  labels:
+    app: mariadb
+    chart: mariadb-7.0.1
+    release: team7
+    heritage: Helm
+    component: master
+spec:
+  selector:
+    matchLabels:
+      app: mariadb
+      release: team7
+      component: master
+  serviceName: mariadb
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: mariadb
+        chart: mariadb-7.0.1
+        release: team7
+        component: master
+    spec:
+      serviceAccountName: default
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: mariadb
+                    release: team7
+      containers:
+        - name: "mariadb"
+          image: docker.io/bitnami/mariadb:10.3.20-debian-9-r0
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb
+                  key: mariadb-root-password
+            - name: MARIADB_USER
+              value: "bn_wordpress"
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb
+                  key: mariadb-password
+            - name: MARIADB_DATABASE
+              value: "bitnami_wordpress"
+          ports:
+            - name: mysql
+              containerPort: 3306
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "exec mysqladmin status -uroot -p$MARIADB_ROOT_PASSWORD"]
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "exec mysqladmin status -uroot -p$MARIADB_ROOT_PASSWORD"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/mariadb
+            - name: config
+              mountPath: /opt/bitnami/mariadb/conf/my.cnf
+              subPath: my.cnf
+      volumes:
+        - name: config
+          configMap:
+            name: mariadb
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: "mariadb"
+          component: "master"
+          release: "team7"
+          heritage: "Helm"
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "2Gi"
