@@ -32,7 +32,9 @@ spec:
     requests:
       storage: "2Gi"
   # storageClassName: "default"
-
+  selector:
+    matchLabels:
+      app: postgresql
 ---
 apiVersion: apps/v1
 kind: Deployment

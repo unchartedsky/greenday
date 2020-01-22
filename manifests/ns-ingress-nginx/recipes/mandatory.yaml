@@ -26,6 +26,8 @@ metadata:
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
+data:
+  1080: "plaintext/dante:1080"
 
 ---
 kind: ConfigMap

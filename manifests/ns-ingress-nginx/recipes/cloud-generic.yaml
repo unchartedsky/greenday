@@ -6,6 +6,10 @@ metadata:
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: moon.andromedarabbit.net
+    external-dns.alpha.kubernetes.io/ttl: "120"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   externalTrafficPolicy: Local
   type: LoadBalancer
@@ -21,5 +25,7 @@ spec:
       port: 443
       protocol: TCP
       targetPort: https
-
----
+    - name: proxied-tcp-1080 # dante
+      port: 1080
+      targetPort: 1080
+      protocol: TCP

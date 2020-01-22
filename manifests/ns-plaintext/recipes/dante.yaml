@@ -1,0 +1,52 @@
+# curl --socks5 <PROXY_USER>:<PROXY_PASSWORD>@moon.andromedarabbit.net:1080 https://api.ipify.org
+apiVersion: v1
+kind: Service
+metadata:
+  name: dante
+  namespace: plaintext
+  labels:
+    app: dante
+spec:
+  selector:
+    app: dante
+  ports:
+  - port: 1080
+    targetPort: 1080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dante
+  namespace: plaintext
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dante
+  template:
+    metadata:
+      labels:
+        app: dante
+    spec:
+      containers:
+      - name: app
+        image: adegtyarev/dante
+        imagePullPolicy: IfNotPresent
+        args:
+        - sockd-username
+        ports:
+        - name: tcp
+          containerPort: 1080
+        envFrom:
+        - secretRef:
+            name: dante
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 256Mi
+        #   limits:
+        #     cpu: 500m
+        #     memory: 512Mi

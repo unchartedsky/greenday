@@ -14,15 +14,25 @@ spec:
   tls:
   - hosts:
     - discourse.unchartedsky.com
+    - dc.unchartedsky.com
+    - forum.unchartedsky.com
     secretName: tls-discourse
-  # - hosts:
-  #   - dc.unchartedsky.com
-  #   secretName: tls-dc
-  # - hosts:
-  #   - forum.unchartedsky.com
-  #   secretName: tls-forum
   rules:
   - host: discourse.unchartedsky.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: discourse
+          servicePort: 80
+  - host: dc.unchartedsky.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: discourse
+          servicePort: 80
+  - host: forum.unchartedsky.com
     http:
       paths:
       - path: /
@@ -70,6 +80,9 @@ spec:
   resources:
     requests:
         storage: 16Gi
+  selector:
+    matchLabels:
+      app: discourse
 ---
 apiVersion: apps/v1
 kind: Deployment
