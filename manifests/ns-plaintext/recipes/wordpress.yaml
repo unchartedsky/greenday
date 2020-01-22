@@ -87,12 +87,13 @@ metadata:
 data:
   go.sh: |
     #!/bin/bash -xe
-    cp -f /opt/tmp/php.ini /opt/bitnami/php/etc/
-    cp -f /opt/tmp/php-fpm.conf /opt/bitnami/nginx/conf/server_blocks/
-    cp -f /opt/tmp/http.conf /opt/bitnami/nginx/conf/server_blocks/
-    cp -f /opt/tmp/https.conf /opt/bitnami/nginx/conf/server_blocks/
-    cp -f /opt/tmp/nginx-cache.conf /opt/bitnami/nginx/conf/server_blocks/
-    cp -f /opt/tmp/nginx.conf /opt/bitnami/nginx/conf/
+    cp -f /opt/tmp-secrets/newrelic.ini /opt/bitnami/php/conf/conf.d/
+    cp -f /opt/tmp-configs/php.ini /opt/bitnami/php/etc/
+    cp -f /opt/tmp-configs/php-fpm.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/http.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/https.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-cache.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx.conf /opt/bitnami/nginx/conf/
 
     /app-entrypoint.sh /run.sh
 
@@ -221,7 +222,9 @@ spec:
         #   mountPath: /opt/bitnami/nginx/conf/vhosts/wordpress-vhosts.conf
         #   subPath: wordpress-vhosts.conf
         - name: wordpress-config
-          mountPath: /opt/tmp
+          mountPath: /opt/tmp-configs
+        - name: newrelic-ini
+          mountPath: /opt/tmp-secrets
         - name: tls-config
           mountPath: /opt/tls
         - name: scripts-d
@@ -240,6 +243,12 @@ spec:
       - name: wordpress-config
         configMap:
           name: wordpress-config
+      - name: newrelic-ini
+        secret:
+          secretName: wordpress
+          items:
+          - key: newrelic.ini
+            path: newrelic.ini
       - name: tls-config
         secret:
           secretName: tls-wordpress

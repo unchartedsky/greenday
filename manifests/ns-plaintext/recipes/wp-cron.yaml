@@ -6,7 +6,7 @@ metadata:
 data:
   run.sh: |
     #!/bin/bash -xe
-    curl -k "https://wordpress/wp-cron.php?doing_wp_cron&702c619152a0d0a447ea553a205a4a48"
+    curl -k "https://wordpress/wp-cron.php?doing_wp_cron&${WP_CRON_SECRET}"
 
 ---
 # 테스트용...
@@ -33,6 +33,12 @@ spec:
         imagePullPolicy: IfNotPresent
         command: [ "/bin/bash", "-c", "--" ]
         args: [ "while true; do sleep 30; done;" ]
+        env:
+        - name: WP_CRON_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: wordpress
+              key: wp-cron-secret
         volumeMounts:
           - name: scripts-d
             mountPath: /scripts
@@ -62,9 +68,9 @@ metadata:
   labels:
     app: wp-cron
 spec:
-  # At every 15th minute
+  # At every 45th minute
   # ref: https://crontab.guru/#*/15_*_*_*_*
-  schedule: "*/15 * * * *"
+  schedule: "*/54 * * * *"
   jobTemplate:
     spec:
       template:
