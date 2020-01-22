@@ -1,3 +1,35 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: discourse
+  namespace: discourse
+  annotations:
+    kubernetes.io/ingress.class: nginx
+
+    cert-manager.io/issuer: letsencrypt-prod
+
+    external-dns.alpha.kubernetes.io/ttl: "120"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  tls:
+  - hosts:
+    - discourse.unchartedsky.com
+    secretName: tls-discourse
+  # - hosts:
+  #   - dc.unchartedsky.com
+  #   secretName: tls-dc
+  # - hosts:
+  #   - forum.unchartedsky.com
+  #   secretName: tls-forum
+  rules:
+  - host: discourse.unchartedsky.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: discourse
+          servicePort: 80
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -5,18 +37,18 @@ metadata:
   namespace: discourse
   labels:
     app: discourse
-  annotations:
-    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
-    service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
+  # annotations:
+    # service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    # service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
     # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
 
-    external-dns.alpha.kubernetes.io/hostname: discourse.unchartedsky.com,forum.unchartedsky.com
-    external-dns.alpha.kubernetes.io/ttl: "120"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # external-dns.alpha.kubernetes.io/hostname: discourse.unchartedsky.com,forum.unchartedsky.com
+    # external-dns.alpha.kubernetes.io/ttl: "120"
+    # external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   # type: NodePort
-  type: LoadBalancer
-  externalTrafficPolicy: "Local"
+  # type: LoadBalancer
+  # externalTrafficPolicy: "Local"
   selector:
     app: discourse
   ports:

@@ -1,3 +1,30 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: wordpress
+  namespace: plaintext
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: https
+
+    cert-manager.io/issuer: letsencrypt-prod
+
+    external-dns.alpha.kubernetes.io/ttl: "120"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  tls:
+  - hosts:
+    - andromedarabbit.net
+    secretName: tls-wordpress
+  rules:
+  - host: andromedarabbit.net
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: wordpress
+          servicePort: 443
+---
 # Source: wordpress/templates/pvc.yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -27,25 +54,25 @@ metadata:
     chart: "wordpress-8.0.1"
     release: "team7"
     heritage: "Helm"
-  annotations:
-    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
-    service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
-    # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
+  # annotations:
+    # service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    # service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "false"
+    # # service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
 
-    external-dns.alpha.kubernetes.io/hostname: andromedarabbit.net
-    external-dns.alpha.kubernetes.io/ttl: "120"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # external-dns.alpha.kubernetes.io/hostname: andromedarabbit.net
+    # external-dns.alpha.kubernetes.io/ttl: "120"
+    # external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: "Local"
+  # type: LoadBalancer
+  # externalTrafficPolicy: "Local"
   ports:
     - name: http
       port: 80
       targetPort: http
       # protocol: TCP
-    # - name: https
-    #   port: 443
-    #   targetPort: https
+    - name: https
+      port: 443
+      targetPort: https
     #   # protocol: TCP
   selector:
     app: "wordpress"
@@ -60,193 +87,15 @@ metadata:
 data:
   go.sh: |
     #!/bin/bash -xe
+    cp -f /opt/tmp/php.ini /opt/bitnami/php/etc/
     cp -f /opt/tmp/php-fpm.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp/http.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp/https.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp/nginx-cache.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp/nginx.conf /opt/bitnami/nginx/conf/
 
     /app-entrypoint.sh /run.sh
 
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: wordpress-config
-  namespace: plaintext
-data:
-  nginx.conf: |-
-    # Based on https://www.nginx.com/resources/wiki/start/topics/examples/full/#nginx-conf
-    user              nginx nginx;  ## Default: nobody
-
-    worker_processes  auto;
-    error_log         "/opt/bitnami/nginx/logs/error.log" warn;
-    pid               "/opt/bitnami/nginx/tmp/nginx.pid";
-
-    events {
-      worker_connections  2048;
-      multi_accept        on;
-      use epoll;
-    }
-
-    http {
-      include       mime.types;
-      default_type  application/octet-stream;
-      log_format    main '$remote_addr - $remote_user [$time_local] '
-                        '"$request" $status  $body_bytes_sent "$http_referer" '
-                        '"$http_user_agent" "$http_x_forwarded_for"';
-      # access_log    "/opt/bitnami/nginx/logs/access.log" main;
-      access_log    off;
-      add_header    X-Frame-Options SAMEORIGIN;
-
-      client_body_temp_path  "/opt/bitnami/nginx/tmp/client_body" 1 2;
-      proxy_temp_path        "/opt/bitnami/nginx/tmp/proxy" 1 2;
-      fastcgi_temp_path      "/opt/bitnami/nginx/tmp/fastcgi" 1 2;
-      scgi_temp_path         "/opt/bitnami/nginx/tmp/scgi" 1 2;
-      uwsgi_temp_path        "/opt/bitnami/nginx/tmp/uwsgi" 1 2;
-
-      sendfile           on;
-      tcp_nopush         on;
-      tcp_nodelay        off;
-      gzip               on;
-      gzip_http_version  1.0;
-      gzip_comp_level    2;
-      gzip_proxied       any;
-      gzip_types         text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
-      keepalive_timeout  65;
-      ssl_protocols      TLSv1 TLSv1.1 TLSv1.2;
-      client_max_body_size 80M;
-
-      include  "/opt/bitnami/nginx/conf/server_blocks/*.conf";
-
-      # HTTP Server
-      server {
-        # port to listen on. Can also be set to an IP:PORT
-        listen  80;
-
-        location /status {
-            stub_status on;
-            access_log   off;
-            allow 127.0.0.1;
-            deny all;
-        }
-      }
-    }
-
-  php-fpm.conf: |-
-    # PHP-FPM FastCGI server
-    # network or unix domain socket configuration
-
-    upstream php {
-            server 127.0.0.1:9000;
-            #server unix:/run/php-fpm/www.sock;
-    }
-
-  nginx-cache.conf: |-
-    proxy_cache_path /opt/bitnami/nginx/tmp/cache keys_zone=cache:12m  max_size=1g levels=1:2 inactive=600s max_size=100m;
-
-  http.conf: |-
-    server {
-      listen 0.0.0.0:80;
-      server_name _;
-
-      proxy_cache cache;
-      proxy_cache_lock on;
-      proxy_cache_valid 200 1s;
-      proxy_cache_use_stale updating;
-
-      root /bitnami/wordpress;
-      index index.php;
-
-      client_max_body_size 20M;
-      client_body_buffer_size 20M;
-
-      if (!-e $request_filename) {
-        rewrite ^/(.+)$ /index.php?q=$1 last;
-      }
-
-      location = /favicon.ico {
-        log_not_found off;
-        access_log off;
-      }
-
-      location = /robots.txt {
-          allow all;
-          log_not_found off;
-          access_log off;
-      }
-
-      error_page  404              /404.html;
-
-      # redirect server error pages to the static page /50x.html
-      #
-      error_page   500 502 503 504  /50x.html;
-      location = /50x.html {
-          root   /bitnami/wordpress;
-      }
-
-      location /wp {
-        rewrite ^/wp/(.*)+$ $1 last;
-      }
-
-      location / {
-        try_files $uri $uri/ /index.php?q=$uri&$args;
-      }
-
-      # deny access to .htaccess files, if Apache's document root
-      # concurs with nginx's one
-      #
-      location ~ /\.ht {
-          deny  all;
-      }
-
-      location ~ \.php$ {
-        root           /bitnami/wordpress;
-        try_files $uri =404;
-
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-
-        #fastcgi_pass unix:/var/run/php-fpm/php5-fpm.sock;
-        fastcgi_pass php;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-
-        fastcgi_buffer_size 128k;
-        fastcgi_buffers 256 16k;
-        fastcgi_busy_buffers_size 256k;
-        fastcgi_temp_file_write_size 256k;
-
-        include fastcgi_params;
-      }
-
-      # Expire rules for static content
-
-      # cache.appcache, your document html and data
-      location ~* \.(?:manifest|appcache|html?)$ {
-        expires -1;
-        # access_log logs/static.log; # I don't usually include a static log
-      }
-
-      # Feed
-      location ~* \.(?:rss|atom)$ {
-        expires 1h;
-        add_header Cache-Control "public";
-      }
-
-      # Media: images, icons, video, audio, HTC
-      location ~* \.(jpg|jpeg|gif|png|ogg|ogv|svg|svgz|eot|otf|woff|mp4|ttf|ico|zip|tgz|gz|rar|bz2|doc|xls|exe|ppt|tar|mid|midi|wav|bmp|rtf)$ {
-          expires 1M;
-          log_not_found off;
-          access_log off;
-          add_header Cache-Control "public";
-      }
-
-      # CSS and Javascript
-      location ~* \.(?:css|js)$ {
-          expires 1y;
-          access_log off;
-          add_header Cache-Control "public";
-      }
-    }
 ---
 # Source: wordpress/templates/deployment.yaml
 apiVersion: apps/v1
@@ -344,8 +193,8 @@ spec:
         ports:
         - name: http
           containerPort: 80
-        # - name: https
-        #   containerPort: 443
+        - name: https
+          containerPort: 443
         livenessProbe:
           httpGet:
             path: /wp-login.php
@@ -373,6 +222,8 @@ spec:
         #   subPath: wordpress-vhosts.conf
         - name: wordpress-config
           mountPath: /opt/tmp
+        - name: tls-config
+          mountPath: /opt/tls
         - name: scripts-d
           mountPath: /scripts
         resources:
@@ -389,6 +240,9 @@ spec:
       - name: wordpress-config
         configMap:
           name: wordpress-config
+      - name: tls-config
+        secret:
+          secretName: tls-wordpress
       - name: scripts-d
         projected:
           defaultMode: 500
