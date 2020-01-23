@@ -102,7 +102,7 @@ spec:
                   - key: run.sh
                     path: run.sh
           restartPolicy: Never
-  successfulJobsHistoryLimit: 10
-  failedJobsHistoryLimit: 10
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 600

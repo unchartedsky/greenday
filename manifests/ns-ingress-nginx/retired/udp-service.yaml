@@ -1,0 +1,25 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: udp-service
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+spec:
+  externalTrafficPolicy: Local
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+  ports:
+    - name: proxied-udp-500 # ikev2
+      port: 500
+      targetPort: 500
+      nodePort: 30050
+      protocol: UDP
+    - name: proxied-udp-4500 # ikev2
+      port: 4500
+      targetPort: 4500
+      nodePort: 30450
+      protocol: UDP

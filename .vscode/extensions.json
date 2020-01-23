@@ -9,6 +9,8 @@
 		"mads-hartmann.bash-ide-vscode",
 		"foxundermoon.shell-format",
 		"timonwong.shellcheck",
-		"ms-kubernetes-tools.vscode-kubernetes-tools"
+		"ms-kubernetes-tools.vscode-kubernetes-tools",
+		"redhat.vscode-yaml",
+		"int-tt.vscode-sops"
 	]
 }

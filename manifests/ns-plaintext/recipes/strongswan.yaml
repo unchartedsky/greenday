@@ -1,0 +1,81 @@
+# Ref: https://medium.com/asl19-developers/build-your-own-cloud-agnostic-tcp-udp-loadbalancer-for-your-kubernetes-apps-3959335f4ec3
+apiVersion: v1
+kind: Service
+metadata:
+  name: strongswan
+  namespace: plaintext
+  labels:
+    app: strongswan
+spec:
+  externalTrafficPolicy: Local
+  type: NodePort
+  selector:
+    app: strongswan
+  ports:
+  - name: udp500
+    port: 500
+    targetPort: 500
+    nodePort: 30050
+    protocol: UDP
+  - name: udp4500
+    port: 4500
+    targetPort: 4500
+    nodePort: 30450
+    protocol: UDP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strongswan
+  namespace: plaintext
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: strongswan
+  template:
+    metadata:
+      labels:
+        app: strongswan
+    spec:
+      containers:
+      - name: app
+        image: gaomd/ikev2-vpn-server:0.3.0
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "cp -f /opt/tmp/ipsec.secrets /etc/ && /usr/bin/start-vpn" ]
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        envFrom:
+        - secretRef:
+            name: strongswan
+        ports:
+        - name: udp500
+          containerPort: 500
+          protocol: UDP
+        - name: udp4500
+          containerPort: 4500
+          protocol: UDP
+        volumeMounts:
+        - name: ipsec-secrets
+          mountPath: "/opt/tmp"
+          readOnly: true
+      volumes:
+      - name: ipsec-secrets
+        secret:
+          secretName: strongswan
+          items:
+          - key: ipsec.secrets
+            path: ipsec.secrets
+        # resources:
+        #   requests:
+        #     cpu: 100m
+        #     memory: 256Mi
+        #   limits:
+        #     cpu: 500m
+        #     memory: 512Mi
