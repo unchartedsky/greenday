@@ -1,0 +1,17 @@
+name: wp-cron
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # At every 45th minute.
+    # https://crontab.guru/#*/45_*_*_*_*
+    - cron:  '*/45 * * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install dependencies
+      run: |
+        curl -k "https://andromedarabbit.net/wp-cron.php?doing_wp_cron&${WP_CRON_SECRET}"
