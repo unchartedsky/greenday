@@ -1,4 +1,7 @@
 
+![](https://github.com/unchartedsky/greenday/workflows/packer/badge.svg)
+![](https://github.com/unchartedsky/greenday/workflows/wp-cron/badge.svg)
+
 # Wordpress 예제
 
 모든 `bash` 스크립트는 [Bash 4에서 작동을 보장합니다.](http://clubmate.fi/upgrade-to-bash-4-in-mac-os-x/) (아무리 기본 쉘을 원칙으로 한다지만 Bash 3는 너무 구려요~)

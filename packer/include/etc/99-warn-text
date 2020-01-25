@@ -1,0 +1,14 @@
+#!/bin/sh
+
+printf " __   __  ___       __        _______   _____  ___    __    _____  ___    _______    \n"
+printf "|   |/  \|   |     /  \      /       \ (\    \|   \  |  \  (\    \|   \  /  _    |   \n"
+printf "|'  /    \:  |    /    \    |:        ||.\\   \    | ||  | |.\\   \    |(: ( \___)   \n"
+printf "|: /'        |   /' /\  \   |_____/   )|: \.   \\  | |:  | |: \.   \\  | \/ \        \n"
+printf " \//  /\'    |  //  __'  \   //      / |.  \    \. | |.  | |.  \    \. | //  \ ___   \n"
+printf " /   /  \\   | /   /  \\  \ |:  __   \ |    \    \ | /\  |\|    \    \ |(:   _(  _|  \n"
+printf "|___/    \___|(___/    \___)|__|  \___) \___|\____\)(__\_|_)\___|\____\) \_______)   \n"
+printf " \n"
+printf " \n"
+printf "Warn you again. Go away if you are not authorized. Everything you do is being watched and monitored. \n"
+printf " \n"
+printf " \n"

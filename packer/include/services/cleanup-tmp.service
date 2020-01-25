@@ -1,0 +1,14 @@
+[Unit]
+Description=Clean up old files from /tmp
+Documentation=https://www.vionblog.com/linux-delete-files-older-than-x-days/
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/os-release
+ExecStartPre=-/usr/bin/find /tmp -maxdepth 1 -mindepth 1 -type d -mmin +60 -exec rm -rf {} +
+ExecStart=-/usr/bin/find /tmp -mmin +60 -exec rm -rf {} +
+TimeoutStopSec=60
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

@@ -5,14 +5,14 @@ on:
     # * is a special character in YAML so you have to quote this string
     # At every 15th minute.
     # https://crontab.guru/#*/45_*_*_*_*
-    - cron:  '*/15 * * * *'
+    - cron:  '*/45 * * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Install dependencies
+    - name: Run WP-CRON
       run: |
         if [[ "${WP_CRON_SECRET}" == "" ]]; then
           exit 1;

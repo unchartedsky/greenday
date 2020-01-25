@@ -1,0 +1,11 @@
+[Unit]
+Description=Runs the cleanup-tmp.service every 15 minutes
+Documentation=https://unix.stackexchange.com/questions/126786/systemd-timer-every-15-minutes
+
+[Timer]
+OnBootSec=10min
+OnCalendar=*:0/15
+Unit=cleanup-tmp.service
+
+[Install]
+WantedBy=basic.target

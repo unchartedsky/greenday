@@ -1,0 +1,33 @@
+name: packer
+
+on:
+  push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install dependencies
+      run: |
+        cd packer
+
+        export WORK_DIR="${PWD}/tmp"
+        mkdir -p "${WORK_DIR}"
+        cd "${WORK_DIR}"
+
+        sudo apt-get -qqy install unzip
+        curl -SL https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip -o packer_${PACKER_VERSION}_linux_amd64.zip
+        unzip packer_${PACKER_VERSION}_linux_amd64.zip
+        sudo mv packer /usr/local/bin/
+
+        cd ..
+        rm -Rf "${WORK_DIR}"
+
+        packer -v
+      env:
+        PACKER_VERSION: "1.5.1"
+    - name: Packer
+      run: |
+        cd packer
+        make validate-syntax

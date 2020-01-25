@@ -8,6 +8,7 @@ brew 'k9s'
 
 # DigitalOcean
 brew 'doctl'
+brew 'packer'
 
 # Utils
 brew 'jq'
