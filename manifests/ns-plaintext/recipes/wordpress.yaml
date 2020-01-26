@@ -161,9 +161,15 @@ spec:
         - name: MARIADB_PORT_NUMBER
           value: "3306"
         - name: WORDPRESS_DATABASE_NAME
-          value: "wordpress"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb
+              key: mariadb-database
         - name: WORDPRESS_DATABASE_USER
-          value: "bn_wordpress"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb
+              key: mariadb-username
         - name: WORDPRESS_DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -262,36 +268,3 @@ spec:
               items:
               - key: go.sh
                 path: go.sh
-
----
-# Source: wordpress/templates/tests/test-mariadb-connection.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: "credentials-test"
-  namespace: plaintext
-  annotations:
-    "helm.sh/hook": test-success
-spec:
-  imagePullSecrets:
-  - name: github-andromedarabbit
-  containers:
-  - name: credentials-test
-    image: docker.pkg.github.com/unchartedsky/bitnami/wordpress-nginx:latest
-    imagePullPolicy: "IfNotPresent"
-    env:
-      - name: MARIADB_HOST
-        value: mariadb
-      - name: MARIADB_PORT
-        value: "3306"
-      - name: WORDPRESS_DATABASE_NAME
-        value: "wordpress"
-      - name: WORDPRESS_DATABASE_USER
-        value: "bn_wordpress"
-      - name: WORDPRESS_DATABASE_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: mariadb
-            key: mariadb-password
-    command: ["sh", "-c", "mysql --host=$MARIADB_HOST --port=$MARIADB_PORT --user=$WORDPRESS_DATABASE_USER --password=$WORDPRESS_DATABASE_PASSWORD"]
-  restartPolicy: Never

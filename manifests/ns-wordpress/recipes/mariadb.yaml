@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mariadb
-  namespace: plaintext
+  namespace: wordpress
   labels:
     app: "mariadb"
     component: "master"
@@ -65,7 +65,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mariadb-tests
-  namespace: plaintext
+  namespace: wordpress
 data:
   run.sh: |-
     @test "Testing MariaDB is accessible" {
@@ -77,7 +77,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mariadb
-  namespace: plaintext
+  namespace: wordpress
   labels:
     app: "mariadb"
     component: "master"
@@ -100,7 +100,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mariadb
-  namespace: plaintext
+  namespace: wordpress
   labels:
     app: mariadb
     chart: mariadb-7.0.1
@@ -206,4 +206,4 @@ spec:
           - "ReadWriteOnce"
         resources:
           requests:
-            storage: "2Gi"
+            storage: "1Gi"

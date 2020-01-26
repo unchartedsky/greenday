@@ -1,0 +1,108 @@
+# 리소스 절약 차원에서 이 Cronjob 대신 Github Actions 를 주로 이용한다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wp-cron-scripts
+  namespace: plaintext
+data:
+  run.sh: |
+    #!/bin/bash -xe
+    curl -k "https://wordpress/wp-cron.php?doing_wp_cron&${WP_CRON_SECRET}"
+
+---
+# 테스트용...
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-cron-tester
+  namespace: plaintext
+spec:
+  selector:
+    matchLabels:
+      app: wp-cron
+  replicas: 0
+  template:
+    metadata:
+      labels:
+        app: wp-cron
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      containers:
+      - name: wp-cron-tester
+        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:33f7415
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        env:
+        - name: WP_CRON_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: wordpress
+              key: wp-cron-secret
+        volumeMounts:
+          - name: scripts-d
+            mountPath: /scripts
+        resources:
+          requests:
+            cpu: 30m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 32Mi
+      volumes:
+      - name: scripts-d
+        projected:
+          defaultMode: 500
+          sources:
+          - configMap:
+              name: wp-cron-scripts
+              items:
+              - key: run.sh
+                path: run.sh
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: wp-cron
+  namespace: plaintext
+  labels:
+    app: wp-cron
+spec:
+  # At 00:00 on Sunday
+  # ref: https://crontab.guru/weekly
+  schedule: "0 0 * * 0"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: wp-cron
+        spec:
+          imagePullSecrets:
+          - name: github-andromedarabbit
+          containers:
+          - name: wp-cron
+            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+            args:
+            - /bin/bash
+            - -c
+            - "/scripts/run.sh"
+            volumeMounts:
+            - name: scripts-d
+              mountPath: /scripts
+          volumes:
+          - name: scripts-d
+            projected:
+              defaultMode: 500
+              sources:
+              - configMap:
+                  name: wp-cron-scripts
+                  items:
+                  - key: run.sh
+                    path: run.sh
+          restartPolicy: Never
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600

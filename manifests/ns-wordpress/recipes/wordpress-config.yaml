@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: wordpress-config
-  namespace: plaintext
+  namespace: wordpress
 data:
   php.ini: |-
     [PHP]
