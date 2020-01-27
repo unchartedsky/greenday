@@ -16,19 +16,16 @@ This is free software; you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 ```
 
+## 편집기
+
+[Visual Studio Code](https://code.visualstudio.com/)를 설치하고 이 프로젝트 폴더를 열면 미리 준비한 [User and Workspace Settings](https://code.visualstudio.com/docs/getstarted/settings) 값에 따라 최적의 구성을 유도합니다.
+
 ## 설치
 
 설치 스크립트 `install.sh`를 실행합니다. 일반적인 경우에 단 한번만 실행하면 됩니다.
 
 ``` bash
 ./install.sh
-```
-
-## `sshfs` 사용 예제
-
-``` bash
-brew install sshfs
-sshfs andromeda:/home/core ./remote -o auto_cache,reconnect,defer_permissions,noappledouble
 ```
 
 ## Secret 암호화

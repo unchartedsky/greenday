@@ -5,6 +5,7 @@ metadata:
   namespace: discourse
   annotations:
     kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 200m
 
     cert-manager.io/issuer: letsencrypt-prod
 
@@ -105,7 +106,7 @@ spec:
       - name: github-andromedarabbit
       initContainers:
       - name: db-migrations
-        image: docker.pkg.github.com/unchartedsky/discourse/discourse:3b9eaee
+        image: docker.pkg.github.com/unchartedsky/discourse/discourse:8dd27e9
         imagePullPolicy: IfNotPresent
         command:
         - bash
@@ -137,7 +138,7 @@ spec:
           value: forum.unchartedsky.com
       containers:
       - name: web
-        image: docker.pkg.github.com/unchartedsky/discourse/discourse:3b9eaee
+        image: docker.pkg.github.com/unchartedsky/discourse/discourse:8dd27e9
         imagePullPolicy: IfNotPresent
         command: ["/sbin/boot"]
         ports:
@@ -177,8 +178,8 @@ spec:
             cpu: 100m
             memory: 256Mi
           limits:
-            cpu: 1000m
-            memory: 2Gi
+            cpu: 3000m
+            memory: 3Gi
         volumeMounts:
         - name: discourse-storage
           mountPath: /shared

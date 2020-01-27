@@ -4,7 +4,7 @@
 ``` bash
 ssh root@206.189.35.8
 
-adduser team7 --disabled-password --quiet  --gecos ""
+adduser team7 --disabled-password --quiet --gecos ""
 usermod -aG sudo team7
 mkdir -p /home/team7/.ssh
 chown 700 /home/team7/.ssh
@@ -17,6 +17,8 @@ systemctl restart sshd
 ssh team7@206.189.35.8
 ```
 
+
+## `sshfs` 사용 예제
 
 ``` bash
 sshfs andromeda:/home/core ./remote-src/ -o auto_cache,reconnect,defer_permissions,noappledouble
