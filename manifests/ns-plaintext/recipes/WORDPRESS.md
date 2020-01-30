@@ -9,3 +9,7 @@
 워드프레스의 성능을 개선하는데 New Relic이 도움이 됐다. 하지만 무료 버전은 매우 기능이 제한적이다. 그런데다 리소스를 아껴써야 하는 환경에서는 에이전트의 메모리 사용량도 눈에 거슬린다.
 
 ![](docs/images/newrelic.png)
+
+## TODO
+
+- [ ] [워드프레스 uploads 폴더를 aws S3으로](https://eastsocial.co.kr/archives/5521)
