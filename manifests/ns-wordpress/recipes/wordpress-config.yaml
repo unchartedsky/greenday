@@ -384,7 +384,7 @@ data:
     ; Maximum execution time of each script, in seconds
     ; http://php.net/max-execution-time
     ; Note: This directive is hardcoded to 0 for the CLI SAPI
-    max_execution_time = 30
+    max_execution_time = 120
 
     ; Maximum amount of time each script may spend parsing request data. It's a good
     ; idea to limit this time on productions servers in order to eliminate unexpectedly
@@ -1965,64 +1965,6 @@ data:
     memory_limit = 1024M
     # Dummy line
 
-  nginx.conf: |-
-    # Based on https://www.nginx.com/resources/wiki/start/topics/examples/full/#nginx-conf
-    user              nginx nginx;  ## Default: nobody
-
-    worker_processes  auto;
-    error_log         "/opt/bitnami/nginx/logs/error.log" warn;
-    pid               "/opt/bitnami/nginx/tmp/nginx.pid";
-
-    events {
-      worker_connections  2048;
-      multi_accept        on;
-      use epoll;
-    }
-
-    http {
-      include       mime.types;
-      default_type  application/octet-stream;
-      log_format    main '$remote_addr - $remote_user [$time_local] '
-                        '"$request" $status  $body_bytes_sent "$http_referer" '
-                        '"$http_user_agent" "$http_x_forwarded_for"';
-      # access_log    "/opt/bitnami/nginx/logs/access.log" main;
-      access_log    off;
-      add_header    X-Frame-Options SAMEORIGIN;
-
-      client_body_temp_path  "/opt/bitnami/nginx/tmp/client_body" 1 2;
-      proxy_temp_path        "/opt/bitnami/nginx/tmp/proxy" 1 2;
-      fastcgi_temp_path      "/opt/bitnami/nginx/tmp/fastcgi" 1 2;
-      scgi_temp_path         "/opt/bitnami/nginx/tmp/scgi" 1 2;
-      uwsgi_temp_path        "/opt/bitnami/nginx/tmp/uwsgi" 1 2;
-
-      sendfile           on;
-      tcp_nopush         on;
-      tcp_nodelay        off;
-      gzip               on;
-      gzip_http_version  1.0;
-      gzip_comp_level    2;
-      gzip_proxied       any;
-      gzip_types         text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
-      keepalive_timeout  65;
-      ssl_protocols      TLSv1 TLSv1.1 TLSv1.2;
-      client_max_body_size 80M;
-
-      include  "/opt/bitnami/nginx/conf/server_blocks/*.conf";
-
-      # HTTP Server
-      server {
-        # port to listen on. Can also be set to an IP:PORT
-        listen  80;
-
-        location /status {
-            stub_status on;
-            access_log   off;
-            allow 127.0.0.1;
-            deny all;
-        }
-      }
-    }
-
   www.conf: |-
     ; Start a new pool named 'www'.
     ; the variable $pool can be used in any directive and will be replaced by the
@@ -2363,7 +2305,7 @@ data:
     ; does not stop script execution for some reason. A value of '0' means 'off'.
     ; Available units: s(econds)(default), m(inutes), h(ours), or d(ays)
     ; Default Value: 0
-    ;request_terminate_timeout = 0
+    request_terminate_timeout = 120s
 
     ; The timeout set by 'request_terminate_timeout' ini option is not engaged after
     ; application calls 'fastcgi_finish_request' or when application has finished and
@@ -2466,6 +2408,64 @@ data:
     include=/opt/bitnami/php/etc/environment.conf
     include=/opt/bitnami/php/etc/common.conf
 
+  nginx.conf: |-
+    # Based on https://www.nginx.com/resources/wiki/start/topics/examples/full/#nginx-conf
+    user              nginx nginx;  ## Default: nobody
+
+    worker_processes  auto;
+    error_log         "/opt/bitnami/nginx/logs/error.log" warn;
+    pid               "/opt/bitnami/nginx/tmp/nginx.pid";
+
+    events {
+      worker_connections  2048;
+      multi_accept        on;
+      use epoll;
+    }
+
+    http {
+      include       mime.types;
+      default_type  application/octet-stream;
+      log_format    main '$remote_addr - $remote_user [$time_local] '
+                        '"$request" $status  $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+      # access_log    "/opt/bitnami/nginx/logs/access.log" main;
+      access_log    off;
+      add_header    X-Frame-Options SAMEORIGIN;
+
+      client_body_temp_path  "/opt/bitnami/nginx/tmp/client_body" 1 2;
+      proxy_temp_path        "/opt/bitnami/nginx/tmp/proxy" 1 2;
+      fastcgi_temp_path      "/opt/bitnami/nginx/tmp/fastcgi" 1 2;
+      scgi_temp_path         "/opt/bitnami/nginx/tmp/scgi" 1 2;
+      uwsgi_temp_path        "/opt/bitnami/nginx/tmp/uwsgi" 1 2;
+
+      sendfile           on;
+      tcp_nopush         on;
+      tcp_nodelay        off;
+      gzip               on;
+      gzip_http_version  1.0;
+      gzip_comp_level    2;
+      gzip_proxied       any;
+      gzip_types         text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+      keepalive_timeout  65;
+      ssl_protocols      TLSv1 TLSv1.1 TLSv1.2;
+      client_max_body_size 80M;
+
+      include  "/opt/bitnami/nginx/conf/server_blocks/*.conf";
+
+      # HTTP Server
+      server {
+        # port to listen on. Can also be set to an IP:PORT
+        listen  80;
+
+        location /status {
+            stub_status on;
+            access_log   off;
+            allow 127.0.0.1;
+            deny all;
+        }
+      }
+    }
+
   php-upstream.conf: |-
     # PHP-FPM FastCGI server
     # network or unix domain socket configuration
@@ -2518,7 +2518,7 @@ data:
 
       if (!-e $request_filename) {
         rewrite ^/wp(/.*)$ $1;
-        rewrite ^/(.+)$ /index.php?q=$1 last;
+        # rewrite ^/(.+)$ /index.php?q=$1 last;
       }
 
       location = /favicon.ico {
@@ -2532,25 +2532,12 @@ data:
           access_log off;
       }
 
-      error_page  404              /404.html;
-
-      # redirect server error pages to the static page /50x.html
-      #
-      error_page   500 502 503 504  /50x.html;
-      location = /50x.html {
-          root   /bitnami/wordpress;
-      }
-
       # deny access to .htaccess files, if Apache's document root
       # concurs with nginx's one
       #
       location ~ /\.ht {
           deny  all;
       }
-
-      # location ~* ^/(wp) {
-      #   rewrite ^/wp/(.*)+$ $1 last;
-      # }
 
       # Expire rules for static content
 
@@ -2581,9 +2568,17 @@ data:
           add_header Cache-Control "public";
       }
 
-
       location / {
         try_files $uri $uri/ /index.php?q=$uri&$args;
+      }
+
+      error_page  404              /page_not_found;
+
+      # redirect server error pages to the static page /50x.html
+      #
+      error_page   500 502 503 504  /50x.html;
+      location = /50x.html {
+          root   /bitnami/wordpress;
       }
 
       location ~ \.php$ {
@@ -2601,6 +2596,8 @@ data:
         fastcgi_buffers 256 16k;
         fastcgi_busy_buffers_size 256k;
         fastcgi_temp_file_write_size 256k;
+
+        fastcgi_read_timeout 120s;
 
         include fastcgi_params;
       }

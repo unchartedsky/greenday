@@ -384,7 +384,7 @@ data:
     ; Maximum execution time of each script, in seconds
     ; http://php.net/max-execution-time
     ; Note: This directive is hardcoded to 0 for the CLI SAPI
-    max_execution_time = 30
+    max_execution_time = 120
 
     ; Maximum amount of time each script may spend parsing request data. It's a good
     ; idea to limit this time on productions servers in order to eliminate unexpectedly
@@ -2305,7 +2305,7 @@ data:
     ; does not stop script execution for some reason. A value of '0' means 'off'.
     ; Available units: s(econds)(default), m(inutes), h(ours), or d(ays)
     ; Default Value: 0
-    ;request_terminate_timeout = 0
+    request_terminate_timeout = 120s
 
     ; The timeout set by 'request_terminate_timeout' ini option is not engaged after
     ; application calls 'fastcgi_finish_request' or when application has finished and
@@ -2596,6 +2596,8 @@ data:
         fastcgi_buffers 256 16k;
         fastcgi_busy_buffers_size 256k;
         fastcgi_temp_file_write_size 256k;
+
+        fastcgi_read_timeout 120s;
 
         include fastcgi_params;
       }
