@@ -12,11 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Run WP-CRON
+    - name: Run WP-CRON against andromedrabbit.net
       run: |
         if [[ "${WP_CRON_SECRET}" == "" ]]; then
           exit 1;
         fi
         curl -k "https://andromedarabbit.net/wp-cron.php?doing_wp_cron&${WP_CRON_SECRET}"
       env:
-        WP_CRON_SECRET: ${{ secrets.WP_CRON_SECRET }}
+        WP_CRON_SECRET: ${{ secrets.PLAINTEXT_WP_CRON_SECRET }}
+    - name: Run WP-CRON against unchartedsky.com
+      run: |
+        if [[ "${WP_CRON_SECRET}" == "" ]]; then
+          exit 1;
+        fi
+        curl -k "https://unchartedsky.com/wp-cron.php?doing_wp_cron&${WP_CRON_SECRET}"
+      env:
+        WP_CRON_SECRET: ${{ secrets.UNCHARTED_WP_CRON_SECRET }}
