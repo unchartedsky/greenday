@@ -1,0 +1,4 @@
+{
+  "terraform.languageServer.enabled": true,
+  "terraform.indexing.enabled": false
+}

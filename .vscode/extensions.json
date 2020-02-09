@@ -1,16 +1,17 @@
 {
-	// See https://go.microsoft.com/fwlink/?LinkId=827846
-	// for the documentation about the extensions.json format
-	"recommendations": [
-		"editorconfig.editorconfig",
-		"rubymaniac.vscode-direnv",
-		"codezombiech.gitignore",
-		"shakram02.bash-beautify",
-		"mads-hartmann.bash-ide-vscode",
-		"foxundermoon.shell-format",
-		"timonwong.shellcheck",
-		"ms-kubernetes-tools.vscode-kubernetes-tools",
-		"redhat.vscode-yaml",
-		"int-tt.vscode-sops"
-	]
+  // See https://go.microsoft.com/fwlink/?LinkId=827846
+  // for the documentation about the extensions.json format
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "rubymaniac.vscode-direnv",
+    "codezombiech.gitignore",
+    "shakram02.bash-beautify",
+    "mads-hartmann.bash-ide-vscode",
+    "foxundermoon.shell-format",
+    "timonwong.shellcheck",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "redhat.vscode-yaml",
+    "int-tt.vscode-sops",
+    "mauve.terraform"
+  ]
 }

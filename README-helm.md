@@ -1,7 +1,7 @@
 # Howto
 
 ``` bash
-helm pull \
+helm fetch \
   --repo https://kubernetes-charts.storage.googleapis.com \
   --untar \
   --untardir ./charts \

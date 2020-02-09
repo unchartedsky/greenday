@@ -9,6 +9,7 @@ brew 'k9s'
 # DigitalOcean
 brew 'doctl'
 brew 'packer'
+brew 'terraform'
 
 # Utils
 brew 'jq'
