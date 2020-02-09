@@ -37,3 +37,21 @@ keybase pgp list | grep 'PGP Fingerprint' |  awk -F ": " '{print $NF}'
 ```
 
 `.envrc` `SOPS_PGP_FP`
+
+
+## GPG password 문제
+
+**make decrypt시 발생 가능한 문제**
+- .gnupg 에 key 가 없다고 나온다면
+```
+keybase pgp export -q <KEY_ID> --secret | gpg --import --allow-secret-key-import
+gpg --export-secret-keys > secring.gpg
+```
+
+- passphrase문제로 decrypt가 안된다면 
+```
+echo "MY_GPG_PASSPHRASE" > key.txt
+touch dummy.txt
+gpg --batch --yes --passphrase-file key.txt --pinentry-mode=loopback -s dummy.txt # sign dummy file to unlock agent
+```
+
