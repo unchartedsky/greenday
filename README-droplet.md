@@ -1,5 +1,5 @@
 
-# Droplet
+# DigitalOcean Droplet
 
 ``` bash
 ssh root@206.189.35.8

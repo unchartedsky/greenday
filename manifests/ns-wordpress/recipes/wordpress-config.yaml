@@ -348,7 +348,7 @@ data:
     ; file or directory. For systems with rarely changing files, consider increasing this
     ; value.
     ; http://php.net/realpath-cache-ttl
-    ;realpath_cache_ttl = 120
+    ;realpath_cache_ttl = 300
 
     ; Enables or disables the circular reference collector.
     ; http://php.net/zend.enable-gc
@@ -384,7 +384,7 @@ data:
     ; Maximum execution time of each script, in seconds
     ; http://php.net/max-execution-time
     ; Note: This directive is hardcoded to 0 for the CLI SAPI
-    max_execution_time = 120
+    max_execution_time = 300
 
     ; Maximum amount of time each script may spend parsing request data. It's a good
     ; idea to limit this time on productions servers in order to eliminate unexpectedly
@@ -401,11 +401,11 @@ data:
     ;max_input_nesting_level = 64
 
     ; How many GET/POST/COOKIE input variables may be accepted
-    ;max_input_vars = 1000
+    max_input_vars = 3000
 
     ; Maximum amount of memory a script may consume (128MB)
     ; http://php.net/memory-limit
-    memory_limit = 128M
+    memory_limit = 256M
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Error handling and logging ;
@@ -2098,7 +2098,7 @@ data:
     ; The number of seconds after which an idle process will be killed.
     ; Note: Used only when pm is set to 'ondemand'
     ; Default Value: 10s
-    pm.process_idle_timeout = 120s;
+    pm.process_idle_timeout = 300s;
 
     ; The number of requests each child process should execute before respawning.
     ; This can be useful to work around memory leaks in 3rd party libraries. For
@@ -2305,7 +2305,7 @@ data:
     ; does not stop script execution for some reason. A value of '0' means 'off'.
     ; Available units: s(econds)(default), m(inutes), h(ours), or d(ays)
     ; Default Value: 0
-    request_terminate_timeout = 120s
+    request_terminate_timeout = 300s
 
     ; The timeout set by 'request_terminate_timeout' ini option is not engaged after
     ; application calls 'fastcgi_finish_request' or when application has finished and
@@ -2597,8 +2597,15 @@ data:
         fastcgi_busy_buffers_size 256k;
         fastcgi_temp_file_write_size 256k;
 
-        fastcgi_read_timeout 120s;
+        fastcgi_read_timeout 300s;
 
         include fastcgi_params;
       }
     }
+
+  wpcron: |-
+    SHELL=/bin/bash
+    PATH=/opt/bitnami/wp-cli/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+    */15 * * * * daemon (wp cron event run --due-now) >> /var/log/cron.log 2>&1
+    #

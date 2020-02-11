@@ -96,6 +96,7 @@ data:
     cp -f /opt/tmp-configs/https.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp-configs/nginx-cache.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp-configs/nginx.conf /opt/bitnami/nginx/conf/
+    cp -f /opt/tmp-configs/wpcron /etc/cron.d/
 
     /app-entrypoint.sh /run.sh
 
@@ -154,6 +155,14 @@ spec:
         - /scripts/go.sh
         # command: ["/bin/sh"]
         # args: ["-c", "while true; do echo hello; sleep 10;done"]
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - >
+                  /usr/bin/crontab /etc/cron.d/wpcron && /usr/sbin/cron;
         env:
         - name: ALLOW_EMPTY_PASSWORD
           value: "no"

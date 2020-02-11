@@ -10,6 +10,7 @@ brew 'k9s'
 brew 'doctl'
 brew 'packer'
 brew 'terraform'
+brew 's3cmd'
 
 # Utils
 brew 'jq'

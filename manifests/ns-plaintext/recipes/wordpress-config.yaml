@@ -2602,3 +2602,10 @@ data:
         include fastcgi_params;
       }
     }
+
+  wpcron: |-
+    SHELL=/bin/bash
+    PATH=/opt/bitnami/wp-cli/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+    */15 * * * * daemon (wp cron event run --due-now) >> /var/log/cron.log 2>&1
+    #
