@@ -1,6 +1,5 @@
 
 ![](https://github.com/unchartedsky/greenday/workflows/packer/badge.svg)
-![](https://github.com/unchartedsky/greenday/workflows/wp-cron/badge.svg)
 
 # Wordpress 예제
 
