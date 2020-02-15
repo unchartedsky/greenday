@@ -70,5 +70,6 @@ remote/
 # ETC
 Brewfile.lock.json
 tmp/
+bin/
 .direnv/
 kubeconfig.yaml

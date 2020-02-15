@@ -1,3 +1,12 @@
+# Utils
+brew 'bash-completion'
+brew 'jq'
+brew 'sops'
+brew 'make'
+brew 'git-lfs'
+brew 'fzf'
+brew 'ag'
+
 # Kubernetes
 brew 'kubectl'
 brew 'kubectx'
@@ -12,9 +21,3 @@ brew 'packer'
 brew 'terraform'
 brew 's3cmd'
 brew 'awscli'
-
-# Utils
-brew 'jq'
-brew 'sops'
-brew 'make'
-brew 'git-lfs'
