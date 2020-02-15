@@ -71,3 +71,4 @@ remote/
 Brewfile.lock.json
 tmp/
 .direnv/
+kubeconfig.yaml

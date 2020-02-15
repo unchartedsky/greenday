@@ -2,5 +2,5 @@
 # DigitalOcean Spaces
 
 ``` bash
-s3cmd ls s3://team7/plaintext-wordpress/
+aws s3 ls --endpoint=https://sgp1.digitaloceanspaces.com s3://team7
 ```

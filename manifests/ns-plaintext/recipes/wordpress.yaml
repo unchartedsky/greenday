@@ -42,7 +42,7 @@ spec:
     - "ReadWriteOnce"
   resources:
     requests:
-      storage: "12Gi"
+      storage: "20Gi"
 ---
 # Source: wordpress/templates/svc.yaml
 apiVersion: v1
@@ -149,7 +149,7 @@ spec:
       - name: github-andromedarabbit
       containers:
       - name: wordpress
-        image: docker.pkg.github.com/unchartedsky/bitnami/wordpress-nginx:latest
+        image: docker.pkg.github.com/unchartedsky/bitnami/wordpress-nginx:5.3.2-debian-10-r5
         imagePullPolicy: "IfNotPresent"
         args:
         - /scripts/go.sh

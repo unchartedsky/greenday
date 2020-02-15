@@ -11,6 +11,7 @@ brew 'doctl'
 brew 'packer'
 brew 'terraform'
 brew 's3cmd'
+brew 'awscli'
 
 # Utils
 brew 'jq'

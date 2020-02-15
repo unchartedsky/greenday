@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts
+  namespace: wordpress
+data:
+  run.sh: |
+    #!/bin/bash -xe
+    mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
+
+    mc mirror s3://team7/uncharted-wordpress s3://team7/uncharted-wordpress-mirrored/
+
+  dry-run.sh: |
+    #!/bin/bash -xe
+    mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
+
+    mc mirror --fake s3://team7/uncharted-wordpress s3://team7/uncharted-wordpress-mirrored/
+
+---
+# 테스트용...
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backup-tester
+  namespace: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: backup
+  replicas: 0
+  template:
+    metadata:
+      labels:
+        app: backup
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      containers:
+      - name: backup-tester
+        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
+        imagePullPolicy: Always
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: backup
+              key: aws_access_key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backup
+              key: aws_secret_access_key
+        resources:
+          requests:
+            cpu: 30m
+            memory: 16Mi
+          limits:
+            cpu: 400m
+            memory: 512Mi
+        volumeMounts:
+        - name: scripts-d
+          mountPath: /scripts
+      volumes:
+      - name: scripts-d
+        projected:
+          defaultMode: 500
+          sources:
+          - configMap:
+              name: backup-scripts
+              items:
+              - key: run.sh
+                path: run.sh
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: wordpress
+  labels:
+    app: backup
+spec:
+  # At 00:00 on Sunday
+  # ref: https://crontab.guru/weekly
+  schedule: "0 0 * * 0"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup
+        spec:
+          imagePullSecrets:
+          - name: github-andromedarabbit
+          containers:
+          - name: backup
+            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
+            args:
+            - /bin/bash
+            - -c
+            - "/scripts/run.sh"
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup
+                  key: aws_access_key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup
+                  key: aws_secret_access_key
+            resources:
+              requests:
+                cpu: 30m
+                memory: 16Mi
+              limits:
+                cpu: 400m
+                memory: 512Mi
+            volumeMounts:
+            - name: scripts-d
+              mountPath: /scripts
+          volumes:
+          - name: scripts-d
+            projected:
+              defaultMode: 500
+              sources:
+              - configMap:
+                  name: backup-scripts
+                  items:
+                  - key: run.sh
+                    path: run.sh
+          restartPolicy: Never
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
