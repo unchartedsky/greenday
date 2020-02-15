@@ -76,13 +76,20 @@ metadata:
 data:
   go.sh: |
     #!/bin/bash -xe
+    mkdir -p /opt/bitnami/nginx/conf/snippets
+
     cp -f /opt/tmp-secrets/newrelic.ini /opt/bitnami/php/conf/conf.d/
     cp -f /opt/tmp-configs/php.ini /opt/bitnami/php/etc/
     cp -f /opt/tmp-configs/www.conf /opt/bitnami/php/etc/php-fpm.d/
     cp -f /opt/tmp-configs/php-upstream.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp-configs/http.conf /opt/bitnami/nginx/conf/server_blocks/
     cp -f /opt/tmp-configs/https.conf /opt/bitnami/nginx/conf/server_blocks/
-    cp -f /opt/tmp-configs/nginx-cache.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-proxy-cache.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-fastcgi-cache.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-fastcgi-cache-serverblock.conf /opt/bitnami/nginx/conf/snippets/
+    cp -f /opt/tmp-configs/nginx-php.conf /opt/bitnami/nginx/conf/snippets/
+    cp -f /opt/tmp-configs/nginx-restrictions.conf /opt/bitnami/nginx/conf/snippets/
+    cp -f /opt/tmp-secrets/nginx-allowed.conf /opt/bitnami/nginx/conf/snippets/
     cp -f /opt/tmp-configs/nginx.conf /opt/bitnami/nginx/conf/
     cp -f /opt/tmp-configs/wpcron /etc/cron.d/
 
@@ -142,7 +149,7 @@ spec:
         args:
         - /scripts/go.sh
         # command: ["/bin/sh"]
-        # args: ["-c", "while true; do echo hello; sleep 10;done"]
+        # args: ["-c", "while true; do echo hello; sleep 10; done"]
         lifecycle:
           postStart:
             exec:
@@ -150,7 +157,7 @@ spec:
                 - "sh"
                 - "-c"
                 - >
-                  /usr/bin/crontab /etc/cron.d/wpcron && /usr/sbin/cron;
+                  /usr/bin/crontab /etc/cron.d/wpcron && /usr/sbin/cron -n;
         env:
         - name: ALLOW_EMPTY_PASSWORD
           value: "no"
@@ -225,7 +232,7 @@ spec:
           subPath: wordpress
         - name: wordpress-config
           mountPath: /opt/tmp-configs
-        - name: newrelic-ini
+        - name: wordpress-secret
           mountPath: /opt/tmp-secrets
         - name: tls-config
           mountPath: /opt/tls
@@ -245,12 +252,14 @@ spec:
       - name: wordpress-config
         configMap:
           name: wordpress-config
-      - name: newrelic-ini
+      - name: wordpress-secret
         secret:
           secretName: wordpress
           items:
           - key: newrelic.ini
             path: newrelic.ini
+          - key: nginx-allowed.conf
+            path: nginx-allowed.conf
       - name: tls-config
         secret:
           secretName: tls-wordpress

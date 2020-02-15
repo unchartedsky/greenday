@@ -2471,12 +2471,162 @@ data:
     # network or unix domain socket configuration
 
     upstream php {
-            server 127.0.0.1:9000;
-            #server unix:/run/php-fpm/www.sock;
+      server 127.0.0.1:9000;
+      #server unix:/run/php-fpm/www.sock;
     }
 
-  nginx-cache.conf: |-
+  nginx-proxy-cache.conf: |-
     proxy_cache_path /opt/bitnami/nginx/tmp/cache keys_zone=cache:12m  max_size=1g levels=1:2 inactive=600s max_size=100m;
+
+  nginx-fastcgi-cache.conf: |-
+    #move next 3 lines to /etc/nginx/nginx.conf if you want to use fastcgi_cache across many sites
+    fastcgi_cache_path /opt/bitnami/nginx/tmp/fastcgi-cache levels=1:2 keys_zone=WORDPRESS:500m inactive=60m;
+    fastcgi_cache_key "$scheme$request_method$host$request_uri";
+    fastcgi_cache_use_stale error timeout invalid_header http_500;
+
+  nginx-fastcgi-cache-serverblock.conf: |-
+    #fastcgi_cache start
+    set $no_cache 0;
+
+    # POST requests and urls with a query string should always go to PHP
+    if ($request_method = POST) {
+      set $no_cache 1;
+    }
+    if ($query_string != "") {
+      set $no_cache 1;
+    }
+
+    # Don't cache uris containing the following segments
+    if ($request_uri ~* "(/wp-admin/|/xmlrpc.php|/wp-(app|cron|login|register|mail).php|wp-.*.php|/feed/|index.php|wp-comments-popup.php|wp-links-opml.php|wp-locations.php|sitemap(_index)?.xml|[a-z0-9_-]+-sitemap([0-9]+)?.xml)") {
+      set $no_cache 1;
+    }
+
+    # Don't use the cache for logged in users or recent commenters
+    if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
+      set $no_cache 1;
+    }
+
+    # location ~ /purge(/.*) {
+    #   # Uncomment the following two lines to allow purge only from the webserver
+    #   include snippets/nginx-allowed.conf;
+    #   deny all;
+
+    #   fastcgi_cache_purge WORDPRESS "$scheme$request_method$host$1";
+    # }
+
+  nginx-php.conf: |-
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    if (!-f $document_root$fastcgi_script_name) {
+        return 404;
+    }
+
+    #fastcgi_pass unix:/var/run/php-fpm/php5-fpm.sock;
+    fastcgi_index index.php;
+    # fastcgi_intercept_errors on;
+    fastcgi_pass php;
+
+    fastcgi_cache_bypass $no_cache;
+    fastcgi_no_cache $no_cache;
+
+    fastcgi_cache WORDPRESS;
+    fastcgi_cache_valid 200 60m;
+
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+    # fastcgi_param               HTTP_X_FORWARDED_FOR $http_x_real_ip;
+    # fastcgi_param               REMOTE_ADDR $http_x_real_ip;
+
+    fastcgi_buffer_size 128k;
+    fastcgi_buffers 256 16k;
+    fastcgi_busy_buffers_size 256k;
+    fastcgi_temp_file_write_size 256k;
+
+    fastcgi_read_timeout 300s;
+
+    include fastcgi_params;
+
+  nginx-restrictions.conf: |-
+    # Global restrictions configuration file.
+    # Designed to be included in any server {} block.
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    # Deny all attempts to access hidden files such as .htaccess, .htpasswd, .DS_Store (Mac).
+    # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
+    location ~ /\. {
+        deny all;
+    }
+
+    # Deny access to any files with a .php extension in the uploads directory
+    # Works in sub-directory installs and also in multisite network
+    # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
+    location ~* /(?:uploads|files)/.*\.php$ {
+        deny all;
+    }
+
+    # deny access to .htaccess files, if Apache's document root
+    # concurs with nginx's one
+    #
+    location ~ /\.ht {
+        deny  all;
+    }
+
+  nginx-wp-super-cache.conf: |-
+    # WP Super Cache rules.
+    # Designed to be included from a 'wordpress-ms-...' configuration file.
+
+    set $cache_uri $request_uri;
+
+    # POST requests and urls with a query string should always go to PHP
+    if ($request_method = POST) {
+      set $cache_uri 'null cache';
+    }
+
+    if ($query_string != "") {
+      set $cache_uri 'null cache';
+    }
+
+    # Don't cache uris containing the following segments
+    if ($request_uri ~* "(/wp-admin/|/xmlrpc.php|/wp-(app|cron|login|register|mail).php|wp-.*.php|/feed/|index.php|wp-comments-popup.php|wp-links-opml.php|wp-locations.php|sitemap(_index)?.xml|[a-z0-9_-]+-sitemap([0-9]+)?.xml)") {
+      set $cache_uri 'null cache';
+    }
+
+    # Don't use the cache for logged in users or recent commenters
+    if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_logged_in") {
+      set $cache_uri 'null cache';
+    }
+
+    # START MOBILE
+    # Mobile browsers section to server them non-cached version. COMMENTED by default as most modern wordpress themes including twenty-eleven are responsive. Uncomment config lines in this section if you want to use a plugin like WP-Touch
+    # if ($http_x_wap_profile) {
+    #        set $cache_uri 'null cache';
+    #}
+
+    #if ($http_profile) {
+    #        set $cache_uri 'null cache';
+    #}
+
+    #if ($http_user_agent ~* (2.0\ MMP|240x320|400X240|AvantGo|BlackBerry|Blazer|Cellphone|Danger|DoCoMo|Elaine/3.0|EudoraWeb|Googlebot-Mobile|hiptop|IEMobile|KYOCERA/WX310K|LG/U990|MIDP-2.|MMEF20|MOT-V|NetFront|Newt|Nintendo\ Wii|Nitro|Nokia|Opera\ Mini|Palm|PlayStation\ Portable|portalmmm|Proxinet|ProxiNet|SHARP-TQ-GX10|SHG-i900|Small|SonyEricsson|Symbian\ OS|SymbianOS|TS21i-10|UP.Browser|UP.Link|webOS|Windows\ CE|WinWAP|YahooSeeker/M1A1-R2D2|iPhone|iPod|Android|BlackBerry9530|LG-TU915\ Obigo|LGE\ VX|webOS|Nokia5800)) {
+    #       set $cache_uri 'null cache';
+    #}
+
+    #if ($http_user_agent ~* (w3c\ |w3c-|acs-|alav|alca|amoi|audi|avan|benq|bird|blac|blaz|brew|cell|cldc|cmd-|dang|doco|eric|hipt|htc_|inno|ipaq|ipod|jigs|kddi|keji|leno|lg-c|lg-d|lg-g|lge-|lg/u|maui|maxo|midp|mits|mmef|mobi|mot-|moto|mwbp|nec-|newt|noki|palm|pana|pant|phil|play|port|prox|qwap|sage|sams|sany|sch-|sec-|send|seri|sgh-|shar|sie-|siem|smal|smar|sony|sph-|symb|t-mo|teli|tim-|tosh|tsm-|upg1|upsi|vk-v|voda|wap-|wapa|wapi|wapp|wapr|webc|winw|winw|xda\ |xda-)) {
+      #      set $cache_uri 'null cache';
+    #}
+    #END MOBILE
+
+    # Use cached or actual file if they exists, otherwise pass request to WordPress
+    location / {
+      try_files /wp-content/cache/supercache/$http_host/$cache_uri/index-https.html $uri $uri/ /index.php?$args ;
+    }
 
   http.conf: |-
     server {
@@ -2516,28 +2666,17 @@ data:
       client_max_body_size 20M;
       client_body_buffer_size 20M;
 
+      set_real_ip_from    10.0.0.0/8;
+      set_real_ip_from    172.16.0.0/12;
+      set_real_ip_from    192.168.0.0/16;
+      real_ip_header      X-Forwarded-For;
+
       if (!-e $request_filename) {
         rewrite ^/wp(/.*)$ $1;
         # rewrite ^/(.+)$ /index.php?q=$1 last;
       }
 
-      location = /favicon.ico {
-        log_not_found off;
-        access_log off;
-      }
-
-      location = /robots.txt {
-          allow all;
-          log_not_found off;
-          access_log off;
-      }
-
-      # deny access to .htaccess files, if Apache's document root
-      # concurs with nginx's one
-      #
-      location ~ /\.ht {
-          deny  all;
-      }
+      include snippets/nginx-restrictions.conf;
 
       # Expire rules for static content
 
@@ -2581,25 +2720,20 @@ data:
           root   /bitnami/wordpress;
       }
 
+      include snippets/nginx-fastcgi-cache-serverblock.conf;
+
       location ~ \.php$ {
         root           /bitnami/wordpress;
         try_files $uri =404;
 
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-
-        #fastcgi_pass unix:/var/run/php-fpm/php5-fpm.sock;
-        fastcgi_pass php;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-
-        fastcgi_buffer_size 128k;
-        fastcgi_buffers 256 16k;
-        fastcgi_busy_buffers_size 256k;
-        fastcgi_temp_file_write_size 256k;
-
-        fastcgi_read_timeout 300s;
-
-        include fastcgi_params;
+        location ~ \.php$ {
+          location ~ ^/(wp-admin|wp-login.php|xmlrpc.php|full-text-rss) {
+            include snippets/nginx-allowed.conf;
+            deny all;
+            include snippets/nginx-php.conf;
+          }
+          include snippets/nginx-php.conf;
+        }
       }
     }
 
