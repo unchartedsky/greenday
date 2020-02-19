@@ -1,4 +1,20 @@
 {
   "terraform.languageServer.enabled": true,
-  "terraform.indexing.enabled": false
+  "terraform.indexing.enabled": false,
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#bc2d5f",
+    "activityBar.activeBorder": "#5bb42b",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#5bb42b",
+    "activityBarBadge.foreground": "#15202b",
+    "titleBar.activeBackground": "#93234a",
+    "titleBar.inactiveBackground": "#93234a99",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveForeground": "#e7e7e799",
+    "statusBar.background": "#93234a",
+    "statusBarItem.hoverBackground": "#bc2d5f",
+    "statusBar.foreground": "#e7e7e7"
+  },
+  "peacock.color": "#93234a"
 }

@@ -8,13 +8,13 @@ data:
     #!/bin/bash -xe
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
-    mc mirror s3://team7/plaintext-wordpress s3://team7/plaintext-wordpress-mirrored/
+    mc mirror s3/team7/plaintext-wordpress s3/team7/plaintext-wordpress-mirrored/
 
   dry-run.sh: |
     #!/bin/bash -xe
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
-    mc mirror --fake s3://team7/plaintext-wordpress s3://team7/plaintext-wordpress-mirrored/
+    mc mirror --fake s3/team7/plaintext-wordpress s3/team7/plaintext-wordpress-mirrored/
 
 ---
 # 테스트용...
@@ -95,7 +95,7 @@ spec:
           - name: github-andromedarabbit
           containers:
           - name: backup
-            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
+            image: docker.pkg.github.com/plaintextsky/macgyver/macgyver:fd216d4
             args:
             - /bin/bash
             - -c
