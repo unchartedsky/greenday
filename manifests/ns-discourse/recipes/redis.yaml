@@ -40,6 +40,8 @@ spec:
         env:
         - name: ALLOW_EMPTY_PASSWORD
           value: "yes"
+        - name: DISABLE_COMMANDS
+          value: ""
         ports:
         - name: redis
           containerPort: 6379
