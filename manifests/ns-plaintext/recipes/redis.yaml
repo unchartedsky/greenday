@@ -35,7 +35,7 @@ spec:
         runAsUser: 1001
       containers:
       - name: redis
-        image: "bitnami/redis:4.0.7-r0"
+        image: "bitnami/redis:5.0.0-r0"
         imagePullPolicy: IfNotPresent
         env:
         - name: ALLOW_EMPTY_PASSWORD

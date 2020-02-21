@@ -101,7 +101,7 @@ data:
     cp -f /opt/tmp-configs/nginx-fastcgi-cache-serverblock.conf /opt/bitnami/nginx/conf/snippets/
     cp -f /opt/tmp-configs/nginx-php.conf /opt/bitnami/nginx/conf/snippets/
     cp -f /opt/tmp-configs/nginx-restrictions.conf /opt/bitnami/nginx/conf/snippets/
-    cp -f /opt/tmp-secrets/nginx-allowed.conf /opt/bitnami/nginx/conf/snippets/
+    sed "s/HOST_IPV4/$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)/" /opt/tmp-secrets/nginx-allowed.conf > /opt/bitnami/nginx/conf/snippets/nginx-allowed.conf
     cp -f /opt/tmp-configs/nginx.conf /opt/bitnami/nginx/conf/
     cp -f /opt/tmp-configs/wpcron /etc/cron.d/
 
