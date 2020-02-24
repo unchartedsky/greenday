@@ -8,9 +8,8 @@
 
 관리자 대시보드 `/wp-admin` 은 허용한 IP 대역에서만 접속가능합니다. `wordpress.enc.yaml` 파일을 복호화하면 IP 대역을 알 수 있습니다.이 주소만 알면 어디에서나 대시보드에 접속가능합니다. 방법은 다음과 같습니다.
 
-1. 헤더 값을 바꾸는 웹 브라우저 플러그인을 설치합니다. Firefox의 경우 [X-Forwarded-For Header](https://addons.mozilla.org/en-US/firefox/addon/x-forwarded-for-injector) 애드온이면 충분합니다.
-2. 방금 설치한 확장기능을 이용해 `x-forwarded-for` 헤더 값을 조작합니다. 앞서 알아낸 IP 주소 중 하나를 적어 넣으면 됩니다.
-  ![](docs/images/X-Forwarded-For.png)
+1. 헤더 값을 바꾸는 웹 브라우저 플러그인을 설치합니다. Firefox의 경우 [Header Editor](https://addons.mozilla.org/en-US/firefox/addon/header-editor) 애드온이면 충분합니다. [Chrome에도 동일한 확장기능이 있습니다.](https://chrome.google.com/webstore/detail/header-editor/eningockdidmgiojffjmkdblpjocbhgh?hl=ko)
+2. 방금 설치한 확장기능을 이용해 `x-forwarded-for` 헤더 값을 조작합니다. 앞서 알아낸 IP 주소 중 하나를 적어 넣으면 됩니다. 직접 규칙을 적어넣기 귀찮다면 `HeaderEditorConfigurations.enc.json` 파일을 `sops`로 복호화한 후에 *Header Editor*에 Import 합니다.
 
 
 ## New Relic PHP Agent

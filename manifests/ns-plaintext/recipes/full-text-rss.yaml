@@ -1,0 +1,201 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: fulltextrss
+  namespace: plaintext
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: http
+    nginx.ingress.kubernetes.io/proxy-body-size: 128m
+    nginx.ingress.kubernetes.io/server-snippet: |
+      set $agentflag 0;
+
+      if ($http_user_agent ~* "(Feedly)" ){
+        set $agentflag 1;
+      }
+
+      if ( $agentflag = 0 ) {
+        return 403;
+      }
+
+    cert-manager.io/issuer: letsencrypt-prod
+
+    external-dns.alpha.kubernetes.io/ttl: "120"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  tls:
+  - hosts:
+    - feed.andromedarabbit.net
+    secretName: tls-fulltextrss
+  rules:
+  - host: feed.andromedarabbit.net
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: fulltextrss
+          servicePort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulltextrss
+  namespace: plaintext
+  labels:
+    app: fulltextrss
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app: fulltextrss
+---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: fulltextrss-data
+#   namespace: plaintext
+#   annotations: {}
+#   labels:
+#     app: fulltextrss
+# spec:
+#   accessModes:
+#   - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
+# ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: copy-fulltextrss-scripts
+  namespace: plaintext
+data:
+  copy.sh: |
+    #!/bin/bash -xe
+    mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
+
+    mc cp s3/team7/store/full-text-rss-3.9.1.zip /tmp/
+    cd /tmp
+    unzip full-text-rss-3.9.1.zip
+    cp -Rf --preserve=all full-text-rss-3.9.1/* /var/www/html/
+
+  run-nginx.sh: |
+    #!/bin/bash -xe
+    chmod -R g+rwX /var/www/html
+    # chown -R 1001:1001 /var/www/html
+    # chown 1001:1001 /opt/bitnami/nginx/html
+
+    /entrypoint.sh /run.sh
+
+  run-chown-php.sh: |
+    #!/bin/bash -xe
+    chmod -R g+rwX /var/www/html
+    chown -R www-data:www-data /var/www/html
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fulltextrss
+  namespace: plaintext
+  labels:
+    app: fulltextrss
+spec:
+  selector:
+    matchLabels:
+      app: fulltextrss
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: fulltextrss
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      initContainers:
+      - name: copy-fulltextrss
+        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
+        # command: ['sh', '-c', 'chmod -R g+rwX /opt/bitnami/wordpress']
+        args:
+        - /bin/bash
+        - -c
+        - "/scripts/copy.sh && /scripts/run-chown-php.sh"
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: backup
+              key: aws_access_key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backup
+              key: aws_secret_access_key
+        volumeMounts:
+        - mountPath: /var/www/html
+          name: fulltextrss-data
+        - name: scripts-d
+          mountPath: /scripts
+      containers:
+      - name: fulltextrss
+        image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:c2a61e9
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - mountPath: /var/www/html/custom_config.php
+          name: fulltextrss-secret
+          subPath: custom_config.php
+        - mountPath: /var/www/html
+          name: fulltextrss-data
+        readinessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+      restartPolicy: Always
+      volumes:
+      - name: fulltextrss-secret
+        secret:
+          secretName: fulltextrss
+          items:
+          - key: custom_config.php
+            path: custom_config.php
+      # - name: fulltextrss-config
+      #   configMap:
+      #     name: fulltextrss-configmap
+      # - name: fulltextrss-data
+      #   persistentVolumeClaim:
+      #     claimName: fulltextrss-data
+      - name: fulltextrss-data
+        emptyDir: {}
+      - name: scripts-d
+        projected:
+          defaultMode: 500
+          sources:
+          - configMap:
+              name: copy-fulltextrss-scripts
+              items:
+              - key: copy.sh
+                path: copy.sh
+              - key: run-chown-php.sh
+                path: run-chown-php.sh
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: nginx-data
+#   namespace: plaintext
+#   annotations: {}
+#   labels:
+#     app: nginx
+# spec:
+#   accessModes:
+#   - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
