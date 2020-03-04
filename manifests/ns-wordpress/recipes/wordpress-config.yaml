@@ -2733,7 +2733,6 @@ data:
         }
 
         location ~ ^/(wp-admin|wp-login.php){
-          deny all;
           include snippets/nginx-php.conf;
         }
 
