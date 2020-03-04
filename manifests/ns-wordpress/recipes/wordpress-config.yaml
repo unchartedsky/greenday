@@ -2726,11 +2726,17 @@ data:
         root           /bitnami/wordpress;
         try_files $uri =404;
 
-        location ~ ^/(wp-admin|wp-login.php|xmlrpc.php|full-text-rss) {
+        location ~ ^/(xmlrpc.php|full-text-rss) {
           include snippets/nginx-allowed.conf;
           deny all;
           include snippets/nginx-php.conf;
         }
+
+        location ~ ^/(wp-admin|wp-login.php){
+          deny all;
+          include snippets/nginx-php.conf;
+        }
+
         include snippets/nginx-php.conf;
       }
     }
