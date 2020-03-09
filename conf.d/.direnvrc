@@ -11,7 +11,8 @@ export_alias() {
     in *:"$alias_dir":*) ;;
       *) PATH_add "$alias_dir"
   esac
-  echo "#!/usr/bin/env bash -e" > "$target"
+  echo "#!/usr/bin/env bash" > "$target"
+  echo "set -e" >> "$target"
   echo "$@" >> "$target"
   chmod +x "$target"
 }

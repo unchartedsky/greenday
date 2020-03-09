@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e
+
 THIS_DIR=$(cd "$(dirname "$0")"; pwd)
 
 RED='\033[0;31m'
