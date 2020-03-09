@@ -124,8 +124,8 @@ spec:
     spec:
       securityContext:
         runAsUser: 0
-        runAsGroup: 1
-        fsGroup: 1
+        runAsGroup: 0
+        fsGroup: 0
       hostAliases:
       - ip: "127.0.0.1"
         hostnames:
