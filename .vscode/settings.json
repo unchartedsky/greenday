@@ -16,5 +16,8 @@
     "statusBarItem.hoverBackground": "#bc2d5f",
     "statusBar.foreground": "#e7e7e7"
   },
+  "terminal.integrated.shellArgs.windows": ["-l"],
+  "terminal.integrated.shellArgs.linux": ["-l"],
+  "terminal.integrated.shellArgs.osx": ["-l"],
   "peacock.color": "#93234a"
 }
