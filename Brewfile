@@ -24,3 +24,4 @@ brew 'awscli'
 
 # VPN
 brew 'wireguard-tools'
+brew 'qrencode'
