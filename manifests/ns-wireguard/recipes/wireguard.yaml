@@ -1,0 +1,84 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: wireguard
+  namespace: wireguard
+  labels:
+    app: wireguard
+spec:
+  type: NodePort
+  ports:
+  - name: wg
+    protocol: UDP
+    nodePort: 30518
+    port: 51820
+    targetPort: 51820
+  selector:
+    app: wireguard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wireguard
+  namespace: wireguard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wireguard
+  template:
+    metadata:
+      labels:
+        app: wireguard
+    spec:
+      initContainers:
+        - name: sysctls
+          image: busybox
+          command:
+          - sh
+          - -c
+          - sysctl -w net.ipv4.ip_forward=1 && sysctl -w net.ipv4.conf.all.forwarding=1
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+            privileged: true
+      containers:
+        - name: wireguard
+          image: masipcat/wireguard-go:latest
+          command:
+          - sh
+          - -c
+          - echo "Public key '$(wg pubkey < /etc/wireguard/privatekey)'" && /entrypoint.sh
+          ports:
+          - containerPort: 51820
+            protocol: UDP
+            name: wireguard
+          env:
+          - name: LOG_LEVEL
+            value: info
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+            privileged: true
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: "100m"
+            limits:
+              memory: 256Mi
+          volumeMounts:
+          - name: wireguard-etc
+            mountPath: /etc/wireguard
+      volumes:
+      - name: wireguard-etc
+        projected:
+          sources:
+          - secret:
+              name: wireguard
+              items:
+              - key: wg0.conf
+                path: wg0.conf
+              - key: privatekey
+                path: privatekey

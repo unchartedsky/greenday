@@ -122,10 +122,10 @@ spec:
         chart: "wordpress-8.0.1"
         release: "team7"
     spec:
-      securityContext:
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 0
+      # securityContext:
+      #   runAsUser: 0
+      #   runAsGroup: 0
+      #   fsGroup: 0
       hostAliases:
       - ip: "127.0.0.1"
         hostnames:

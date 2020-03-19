@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wireguard
+  labels:
+    name: wireguard
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: pod-limit
+  namespace: wireguard
+spec:
+  hard:
+    pods: "30"

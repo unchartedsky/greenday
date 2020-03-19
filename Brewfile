@@ -21,3 +21,6 @@ brew 'packer'
 brew 'terraform'
 brew 's3cmd'
 brew 'awscli'
+
+# VPN
+brew 'wireguard-tools'
