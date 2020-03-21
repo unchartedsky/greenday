@@ -1,7 +1,7 @@
 {
   "_comment": "packer build -var 'aws_profile=stockplusoldmaster' -var 'aws_region=ap-northeast-2' debian.json",
   "variables": {
-    "api_token": "{{env `DIGITALOCEAN_API_TOKEN`}}",
+    "api_token": "{{env `DIGITALOCEAN_ACCESS_TOKEN`}}",
     "git_branch": "{{env `GIT_COMMIT_BRANCH`}}",
     "git_commit_id": "{{env `GIT_COMMIT_ID`}}",
     "ssh_username": "root"
@@ -19,7 +19,7 @@
       "monitoring": true,
       "ipv6": false,
 
-      "snapshot_name": "debian-10-x64-team7-{{user `git_commit_id`}}",
+      "snapshot_name": "debian-10-x64-team7-{{isotime | clean_resource_name}}-{{user `git_commit_id`}}",
 
       "tags": [
         "os:distribution:debian-10-x64-team7",
