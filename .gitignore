@@ -61,6 +61,7 @@ remote/
 # Credentials and secrets
 .secrets/**/*
 !.secrets/**/*.enc.*
+!.secrets/**/*.enc
 
 **/secrets/**/*.yml
 **/secrets/**/*.yaml
