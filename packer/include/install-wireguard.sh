@@ -5,7 +5,7 @@ export DEBIAN_FRONTEND=noninteractive
 DISTRIBUTOR_ID="$(lsb_release -i -s)"
 
 if [[ "${DISTRIBUTOR_ID}" == "Debian" ]]; then
-    "/home/${SSH_USERNAME}/tmp/wireguard/install-wireguard-on-debian.sh"
+    "${SSH_USERHOME}/tmp/wireguard/install-wireguard-on-debian.sh"
 else
-    "/home/${SSH_USERNAME}/tmp/wireguard/install-wireguard-on-ubuntu.sh"
+    "${SSH_USERHOME}/tmp/wireguard/install-wireguard-on-ubuntu.sh"
 fi

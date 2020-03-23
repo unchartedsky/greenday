@@ -4,7 +4,8 @@
     "api_token": "{{env `DIGITALOCEAN_ACCESS_TOKEN`}}",
     "git_branch": "{{env `GIT_COMMIT_BRANCH`}}",
     "git_commit_id": "{{env `GIT_COMMIT_ID`}}",
-    "ssh_username": "root"
+    "ssh_username": "root",
+    "ssh_userhome": "/root"
   },
   "builders": [
     {
@@ -19,7 +20,7 @@
       "monitoring": true,
       "ipv6": false,
 
-      "snapshot_name": "debian-10-x64-team7-{{isotime | clean_resource_name}}-{{user `git_commit_id`}}",
+      "snapshot_name": "debian-10-x64-team7-{{isotime}}-{{user `git_commit_id`}}",
 
       "tags": [
         "os:distribution:debian-10-x64-team7",
@@ -33,74 +34,74 @@
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /home/{{user `ssh_username`}}/tmp/services"
+        "mkdir -p {{user `ssh_userhome`}}/tmp/services"
       ]
     },
 
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /home/{{user `ssh_username`}}/tmp/wireguard"
+        "mkdir -p {{user `ssh_userhome`}}/tmp/wireguard"
       ]
     },
     {
       "type": "file",
       "source": "include/wireguard/install-wireguard-on-debian.sh",
-      "destination": "/home/{{user `ssh_username`}}/tmp/wireguard/install-wireguard-on-debian.sh"
+      "destination": "{{user `ssh_userhome`}}/tmp/wireguard/install-wireguard-on-debian.sh"
     },
     {
       "type": "file",
       "source": "include/wireguard/install-wireguard-on-ubuntu.sh",
-      "destination": "/home/{{user `ssh_username`}}/tmp/wireguard/install-wireguard-on-ubuntu.sh"
+      "destination": "{{user `ssh_userhome`}}/tmp/wireguard/install-wireguard-on-ubuntu.sh"
     },
 
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /home/{{user `ssh_username`}}/tmp/docker"
+        "mkdir -p {{user `ssh_userhome`}}/tmp/docker"
       ]
     },
     {
       "type": "file",
       "source": "include/docker/install-docker-on-debian.sh",
-      "destination": "/home/{{user `ssh_username`}}/tmp/docker/install-docker-on-debian.sh"
+      "destination": "{{user `ssh_userhome`}}/tmp/docker/install-docker-on-debian.sh"
     },
     {
       "type": "file",
       "source": "include/docker/install-docker-on-ubuntu.sh",
-      "destination": "/home/{{user `ssh_username`}}/tmp/docker/install-docker-on-ubuntu.sh"
+      "destination": "{{user `ssh_userhome`}}/tmp/docker/install-docker-on-ubuntu.sh"
     },
 
     {
       "type": "file",
       "source": "include/services/cleanup-tmp.service",
-      "destination": "/home/{{user `ssh_username`}}/tmp/services/cleanup-tmp.service"
+      "destination": "{{user `ssh_userhome`}}/tmp/services/cleanup-tmp.service"
     },
     {
       "type": "file",
       "source": "include/services/cleanup-tmp.timer",
-      "destination": "/home/{{user `ssh_username`}}/tmp/services/cleanup-tmp.timer"
+      "destination": "{{user `ssh_userhome`}}/tmp/services/cleanup-tmp.timer"
     },
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /home/{{user `ssh_username`}}/tmp/etc"
+        "mkdir -p {{user `ssh_userhome`}}/tmp/etc"
       ]
     },
     {
       "type": "file",
       "source": "include/etc/99-warn-text",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/99-warn-text"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/99-warn-text"
     },
     {
       "type": "file",
       "source": "include/etc/issue",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/issue"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/issue"
     },
     {
       "type": "file",
       "source": "include/etc/issue.net",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/issue.net"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/issue.net"
     },
 
     {
@@ -114,7 +115,8 @@
       "type": "shell",
       "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
       "environment_vars" : [
-        "SSH_USERNAME={{user `ssh_username`}}"
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
       ],
       "script": "include/initialize.sh"
     },
@@ -122,7 +124,26 @@
       "type": "shell",
       "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
       "environment_vars" : [
-        "SSH_USERNAME={{user `ssh_username`}}"
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
+      ],
+      "script": "include/install-golang.sh"
+    },
+    {
+      "type": "shell",
+      "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
+      "environment_vars" : [
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
+      ],
+      "script": "include/install-encryption-tools.sh"
+    },
+    {
+      "type": "shell",
+      "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
+      "environment_vars" : [
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
       ],
       "script": "include/install-wireguard.sh"
     },
@@ -130,7 +151,8 @@
       "type": "shell",
       "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
       "environment_vars" : [
-        "SSH_USERNAME={{user `ssh_username`}}"
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
       ],
       "script": "include/install-chrony.sh"
     },
@@ -138,7 +160,8 @@
       "type": "shell",
       "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
       "environment_vars" : [
-        "SSH_USERNAME={{user `ssh_username`}}"
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
       ],
       "script": "include/install-cleanup-tmp.sh"
     },
@@ -146,7 +169,8 @@
       "type": "shell",
       "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
       "environment_vars" : [
-        "SSH_USERNAME={{user `ssh_username`}}"
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
       ],
       "script": "include/install-docker-ce.sh"
     },
@@ -154,49 +178,50 @@
     {
       "type": "file",
       "source": "include/docker.logrotate",
-      "destination": "/home/{{user `ssh_username`}}/tmp/docker.logrotate"
+      "destination": "{{user `ssh_userhome`}}/tmp/docker.logrotate"
     },
     {
       "type": "shell",
       "inline": [
-        "sudo mv /home/{{user `ssh_username`}}/tmp/docker.logrotate /etc/logrotate.d/docker"
+        "sudo mv {{user `ssh_userhome`}}/tmp/docker.logrotate /etc/logrotate.d/docker"
       ]
     },
 
     {
       "type": "file",
       "source": "include/etc/limits.conf",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/limits.conf"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/limits.conf"
     },
     {
       "type": "file",
       "source": "include/etc/sysctld.network.conf",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/sysctld.network.conf"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/sysctld.network.conf"
     },
     {
       "type": "file",
       "source": "include/etc/pamd.common-session",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/pamd.common-session"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/pamd.common-session"
     },
     {
       "type": "file",
       "source": "include/etc/pamd.common-session-noninteractive",
-      "destination": "/home/{{user `ssh_username`}}/tmp/etc/pamd.common-session-noninteractive"
+      "destination": "{{user `ssh_userhome`}}/tmp/etc/pamd.common-session-noninteractive"
     },
     {
       "type": "shell",
       "inline": [
-        "sudo mv /home/{{user `ssh_username`}}/tmp/etc/limits.conf /etc/security/limits.conf",
-        "sudo mv /home/{{user `ssh_username`}}/tmp/etc/sysctld.network.conf /etc/sysctl.d/60-network.conf",
-        "sudo mv /home/{{user `ssh_username`}}/tmp/etc/pamd.common-session /etc/pam.d/common-session",
-        "sudo mv /home/{{user `ssh_username`}}/tmp/etc/pamd.common-session-noninteractive /etc/pam.d/common-session-noninteractive"
+        "sudo mv {{user `ssh_userhome`}}/tmp/etc/limits.conf /etc/security/limits.conf",
+        "sudo mv {{user `ssh_userhome`}}/tmp/etc/sysctld.network.conf /etc/sysctl.d/60-network.conf",
+        "sudo mv {{user `ssh_userhome`}}/tmp/etc/pamd.common-session /etc/pam.d/common-session",
+        "sudo mv {{user `ssh_userhome`}}/tmp/etc/pamd.common-session-noninteractive /etc/pam.d/common-session-noninteractive"
       ]
     },
     {
       "type": "shell",
       "execute_command": "{{ .Vars }} sudo -S -E bash '{{.Path}}'",
       "environment_vars" : [
-        "SSH_USERNAME={{user `ssh_username`}}"
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_USERHOME={{user `ssh_userhome`}}"
       ],
       "script": "include/enhance-security.sh"
     },
@@ -204,7 +229,7 @@
     {
       "type": "shell",
       "inline": [
-        "sudo rm -rf /home/{{user `ssh_username`}}/tmp/etc"
+        "sudo rm -rf {{user `ssh_userhome`}}/tmp/etc"
       ]
     }
   ]

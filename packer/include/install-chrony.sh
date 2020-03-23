@@ -16,7 +16,7 @@ rm -f /etc/init.d/ntp
 apt -y -q install chrony
 
 if [[ -f /etc/chrony/chrony.conf ]]; then
-    cp -f /etc/chrony/chrony.conf "/home/${SSH_USERNAME}/tmp/chrony.conf"
+    cp -f /etc/chrony/chrony.conf "${SSH_USERHOME}/tmp/chrony.conf"
 fi
 
 cat > /etc/chrony/chrony.conf <<EOL
@@ -28,12 +28,12 @@ pool 3.debian.pool.ntp.org iburst
 
 EOL
 
-if [[ -f "/home/${SSH_USERNAME}/tmp/chrony.conf" ]]; then
-    sed -- 's/pool/#pool/g' "/home/${SSH_USERNAME}/tmp/chrony.conf" >> /etc/chrony/chrony.conf
+if [[ -f "${SSH_USERHOME}/tmp/chrony.conf" ]]; then
+    sed -- 's/pool/#pool/g' "${SSH_USERHOME}/tmp/chrony.conf" >> /etc/chrony/chrony.conf
 fi
 
 systemctl restart chrony
 
-if [[ -f "/home/${SSH_USERNAME}/tmp/chrony.conf" ]]; then
-    rm -f "/home/${SSH_USERNAME}/tmp/chrony.conf"
+if [[ -f "${SSH_USERHOME}/tmp/chrony.conf" ]]; then
+    rm -f "${SSH_USERHOME}/tmp/chrony.conf"
 fi
