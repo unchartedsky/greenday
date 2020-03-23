@@ -6,7 +6,7 @@ printf 'Package: *\nPin: release a=unstable\nPin-Priority: 90\n' > /etc/apt/pref
 
 apt-get update -y -q
 
-apt-get install -y -q wireguard
+apt-get install -y -q wireguard wireguard-dkms
 
 
 # WIREGUARD_DKMS_INSTALLED=$(dkms status | grep wireguard)
