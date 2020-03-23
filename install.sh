@@ -65,6 +65,9 @@ install_kubectl_fzf() {
   if [[ "${THIS_OS}" == "darwin" ]]; then
     BIN_DIR="${THIS_DIR}/bin/${THIS_OS}_${ARCH}"
 
+    if [ ! -d "${BIN_DIR}" ]; then
+      mkdir -p "${BIN_DIR}"
+    fi
     pushd "${BIN_DIR}"
     # Mac
     FILE="kubectl-fzf_darwin_amd64.tar.gz"
