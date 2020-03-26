@@ -54,3 +54,33 @@ touch dummy.txt
 gpg --batch --yes --passphrase-file key.txt --pinentry-mode=loopback -s dummy.txt # sign dummy file to unlock agent
 ```
 
+## Windows 10 WSL 사용시 준비물
+
+- [Homebrew](https://docs.brew.sh/Homebrew-on-Linux)
+```
+brew doctor 를 이용해 설정에 문제가 없는지 체크.
+```
+- keybase pgp export
+```
+keybase pgp pull 로 키를 받았다면 바로 앞 섹션의 make decrypt시 발생 가능한 문제에서 언급된 키 익스포트를 진행한다.
+[Kleopatra(gpg4win)](https://gpg4win.org/download.html)를 설치하면 Windows에서 gpg 커맨드를 사용할 수 있다.
+WSL에서는 Windows에 설치된 keybase나 gpg에 직접 액세스가 불가능(조금 이상하긴 하지만 Wine을 이용하면 가능할수도...) 하기 때문에 키를 파일로 저장한다.
+cat keybase-pgp.txt | gpg --import --no-tty --batch --allow-secret-key-import
+
+```
+- WSL 소소한 튜닝
+```
+.bashrc
+# Start at home directory
+if [ -t 1 ]; then
+  cd ~
+fi
+
+# Fix WSL permissions
+umask 022
+
+.bash_profile
+GPG_TTY=$(tty)
+export GPG_TTY
+```
+마지막으로 저장소의 이미지 파일을 위해 git lfs pull을 잊지 않도록 한다...
