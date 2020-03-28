@@ -9,3 +9,5 @@ if [[ "${DISTRIBUTOR_ID}" == "Debian" ]]; then
 else
     "${SSH_USERHOME}/tmp/wireguard/install-wireguard-on-ubuntu.sh"
 fi
+
+apt-get install -q -y iptables ipset
