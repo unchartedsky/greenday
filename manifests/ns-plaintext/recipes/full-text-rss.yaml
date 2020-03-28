@@ -20,7 +20,8 @@ metadata:
 
     cert-manager.io/issuer: letsencrypt-prod
 
-    external-dns.alpha.kubernetes.io/ttl: "120"
+    # For Cloudflare proxied entries, set the TTL annotation to 1 (automatic), or do not set it.
+    external-dns.alpha.kubernetes.io/ttl: "1"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   tls:

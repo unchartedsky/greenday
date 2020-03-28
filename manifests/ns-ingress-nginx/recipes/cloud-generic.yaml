@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
   annotations:
     external-dns.alpha.kubernetes.io/hostname: moon.andromedarabbit.net
+    # For Cloudflare proxied entries, set the TTL annotation to 1 (automatic), or do not set it.
     external-dns.alpha.kubernetes.io/ttl: "120"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
