@@ -77,10 +77,10 @@ data:
     #!/bin/bash -xe
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
-    mc cp s3/team7/store/full-text-rss-3.9.1.zip /tmp/
+    mc cp s3/team7/store/full-text-rss-3.9.5.zip /tmp/
     cd /tmp
-    unzip full-text-rss-3.9.1.zip
-    cp -Rf --preserve=all full-text-rss-3.9.1/* /var/www/html/
+    unzip full-text-rss-3.9.5.zip
+    cp -Rf --preserve=all full-text-rss-3.9.5/* /var/www/html/
 
   run-nginx.sh: |
     #!/bin/bash -xe
