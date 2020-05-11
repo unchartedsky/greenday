@@ -1,0 +1,201 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: macgyver
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: macgyver
+  namespace: kube-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  resourceNames:
+  - "ip-addresses"
+  verbs:
+  - get
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: macgyver
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: macgyver
+subjects:
+- kind: ServiceAccount
+  name: macgyver
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: macgyver
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: macgyver
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: macgyver
+subjects:
+- kind: ServiceAccount
+  name: macgyver
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: macgyver-scripts
+  namespace: kube-system
+data:
+  run.sh: |
+    #!/bin/bash -xe
+    kubectl get node -o json | jq -r '.items[] .status .addresses[] | select(.type == "InternalIP") | .address' | tee /tmp/internal-ips.txt
+
+    kubectl get node -o json | jq -r '.items[] .status .addresses[] | select(.type == "ExternalIP") | .address' | tee /tmp/external-ips.txt
+
+    kubectl create secret generic ip-addresses --from-file=/tmp/internal-ips.txt --from-file=/tmp/external-ips.txt --dry-run=client -o yaml > /tmp/output-tmp.yaml
+
+    kubectl annotate --overwrite -f /tmp/output-tmp.yaml secretsync.ibm.com/replicate="true" secretsync.ibm.com/replicate-to=ALL/ip-addresses --local=true -o yaml > /tmp/output.yaml
+
+    kubectl apply -f /tmp/output.yaml
+
+    rm -rf /tmp/*
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: macgyver
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: macgyver
+  template:
+    metadata:
+      labels:
+        app: macgyver
+    spec:
+      imagePullSecrets:
+      - name: github-andromedarabbit
+      serviceAccountName: macgyver
+      securityContext:
+        fsGroup: 999
+      containers:
+      - name: macgyver
+        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+        imagePullPolicy: IfNotPresent
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+        resources:
+          requests:
+            cpu: 30m
+            memory: 32Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        volumeMounts:
+        - name: scripts-d
+          mountPath: /scripts
+      volumes:
+      - name: scripts-d
+        projected:
+          defaultMode: 0755
+          sources:
+          - configMap:
+              name: macgyver-scripts
+              items:
+              - key: run.sh
+                path: run.sh
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: macgyver
+  namespace: kube-system
+  labels:
+    app: macgyver
+spec:
+  # At minute 0 past every hour
+  # ref: https://crontab.guru/#0_*/1_*_*_*
+  schedule: "0 */1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: macgyver
+        spec:
+          imagePullSecrets:
+          - name: github-andromedarabbit
+          serviceAccountName: macgyver
+          securityContext:
+            fsGroup: 999
+          containers:
+          - name: macgyver
+            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+            imagePullPolicy: IfNotPresent
+            args:
+            - /bin/bash
+            - -c
+            - "/scripts/run.sh"
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
+            resources:
+              requests:
+                cpu: 30m
+                memory: 16Mi
+              limits:
+                cpu: 400m
+                memory: 512Mi
+            volumeMounts:
+            - name: scripts-d
+              mountPath: /scripts
+          volumes:
+          - name: scripts-d
+            projected:
+              defaultMode: 0755
+              sources:
+              - configMap:
+                  name: macgyver-scripts
+                  items:
+                  - key: run.sh
+                    path: run.sh
+          restartPolicy: Never
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600

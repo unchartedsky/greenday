@@ -90,7 +90,15 @@ data:
     cp -f /opt/tmp-configs/nginx-fastcgi-cache-serverblock.conf /opt/bitnami/nginx/conf/snippets/
     cp -f /opt/tmp-configs/nginx-php.conf /opt/bitnami/nginx/conf/snippets/
     cp -f /opt/tmp-configs/nginx-restrictions.conf /opt/bitnami/nginx/conf/snippets/
-    sed "s/HOST_IPV4/$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)/" /opt/tmp-secrets/nginx-allowed.conf > /opt/bitnami/nginx/conf/snippets/nginx-allowed.conf
+
+    cp -f /opt/tmp-secrets/nginx-allowed.conf /opt/bitnami/nginx/conf/snippets/nginx-allowed.conf
+    cat >>/opt/bitnami/nginx/conf/snippets/nginx-allowed.conf <<EOL
+
+
+    # Internal IP Addresses
+    EOL
+    sed -e 's/^\(.*\)$/allow \1;/' /opt/tmp-ip-addresses/*.txt >> /opt/bitnami/nginx/conf/snippets/nginx-allowed.conf
+
     cp -f /opt/tmp-configs/nginx.conf /opt/bitnami/nginx/conf/
     cp -f /opt/tmp-configs/wpcron /etc/cron.d/
 
@@ -247,6 +255,8 @@ spec:
           mountPath: /opt/tls
         - name: scripts-d
           mountPath: /scripts
+        - name: ip-addresses
+          mountPath: /opt/tmp-ip-addresses
         resources:
           requests:
             cpu: 100m
@@ -274,10 +284,13 @@ spec:
           secretName: tls-wordpress
       - name: scripts-d
         projected:
-          defaultMode: 0500
+          defaultMode: 500
           sources:
           - configMap:
               name: wordpress-scripts
               items:
               - key: go.sh
                 path: go.sh
+      - name: ip-addresses
+        secret:
+          secretName: ip-addresses
