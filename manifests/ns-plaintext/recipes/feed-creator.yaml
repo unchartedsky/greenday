@@ -145,7 +145,8 @@ spec:
           mountPath: /scripts
       containers:
       - name: feed-creator
-        image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:c2a61e9
+        image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
           name: http
