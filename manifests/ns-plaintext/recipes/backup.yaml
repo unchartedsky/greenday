@@ -35,12 +35,17 @@ spec:
     spec:
       imagePullSecrets:
       - name: github-andromedarabbit
+      securityContext:
+        fsGroup: 999
       containers:
       - name: backup-tester
         image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
         imagePullPolicy: Always
         command: [ "/bin/bash", "-c", "--" ]
         args: [ "while true; do sleep 30; done;" ]
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -93,6 +98,8 @@ spec:
         spec:
           imagePullSecrets:
           - name: github-andromedarabbit
+          securityContext:
+            fsGroup: 999
           containers:
           - name: backup
             image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
@@ -100,6 +107,9 @@ spec:
             - /bin/bash
             - -c
             - "/scripts/run.sh"
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
             env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:

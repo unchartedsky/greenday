@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: fulltextrss
+  name: pdf-newspaper
   namespace: plaintext
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -26,40 +26,40 @@ metadata:
 spec:
   tls:
   - hosts:
-    - feed.andromedarabbit.net
-    secretName: tls-fulltextrss
+    - pdf.andromedarabbit.net
+    secretName: tls-pdf-newspaper
   rules:
-  - host: feed.andromedarabbit.net
+  - host: pdf.andromedarabbit.net
     http:
       paths:
       - path: /
         backend:
-          serviceName: fulltextrss
+          serviceName: pdf-newspaper
           servicePort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fulltextrss
+  name: pdf-newspaper
   namespace: plaintext
   labels:
-    app: fulltextrss
+    app: pdf-newspaper
 spec:
   ports:
   - name: http
     port: 80
     targetPort: 80
   selector:
-    app: fulltextrss
+    app: pdf-newspaper
 ---
 # apiVersion: v1
 # kind: PersistentVolumeClaim
 # metadata:
-#   name: fulltextrss-data
+#   name: pdf-newspaper-data
 #   namespace: plaintext
 #   annotations: {}
 #   labels:
-#     app: fulltextrss
+#     app: pdf-newspaper
 # spec:
 #   accessModes:
 #   - ReadWriteOnce
@@ -70,19 +70,19 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: copy-fulltextrss-scripts
+  name: copy-pdf-newspaper-scripts
   namespace: plaintext
 data:
   copy.sh: |
     #!/bin/bash -xe
-    export FULLTEXTRSS_VERSION="3.9.6"
+    export PDF_NEWPAPER_VERSION="2.6"
 
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
-    mc cp "s3/team7/store/full-text-rss-${FULLTEXTRSS_VERSION}.zip" /tmp/
+    mc cp "s3/team7/store/pdf-newspaper-${PDF_NEWPAPER_VERSION}.zip" /tmp/
     cd /tmp
-    unzip "full-text-rss-${FULLTEXTRSS_VERSION}.zip"
-    cp -Rf --preserve=all full-text-rss-${FULLTEXTRSS_VERSION}/* /var/www/html/
+    unzip "pdf-newspaper-${PDF_NEWPAPER_VERSION}.zip"
+    cp -Rf --preserve=all pdf-newspaper-${PDF_NEWPAPER_VERSION}/* /var/www/html/
 
   run-nginx.sh: |
     #!/bin/bash -xe
@@ -101,28 +101,26 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fulltextrss
+  name: pdf-newspaper
   namespace: plaintext
   labels:
-    app: fulltextrss
+    app: pdf-newspaper
 spec:
   selector:
     matchLabels:
-      app: fulltextrss
+      app: pdf-newspaper
   replicas: 1
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: fulltextrss
+        app: pdf-newspaper
     spec:
       imagePullSecrets:
       - name: github-andromedarabbit
-      securityContext:
-        fsGroup: 33
       initContainers:
-      - name: copy-fulltextrss
+      - name: copy
         image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
         # command: ['sh', '-c', 'chmod -R g+rwX /opt/bitnami/wordpress']
         args:
@@ -142,21 +140,21 @@ spec:
               key: aws_secret_access_key
         volumeMounts:
         - mountPath: /var/www/html
-          name: fulltextrss-data
+          name: pdf-newspaper-data
         - name: scripts-d
           mountPath: /scripts
       containers:
-      - name: fulltextrss
+      - name: pdf-newspaper
         image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:c2a61e9
         ports:
         - containerPort: 80
           name: http
         volumeMounts:
         - mountPath: /var/www/html/custom_config.php
-          name: fulltextrss-secret
+          name: pdf-newspaper-secret
           subPath: custom_config.php
         - mountPath: /var/www/html
-          name: fulltextrss-data
+          name: pdf-newspaper-data
         readinessProbe:
           tcpSocket:
             port: http
@@ -164,26 +162,26 @@ spec:
           timeoutSeconds: 5
       restartPolicy: Always
       volumes:
-      - name: fulltextrss-secret
+      - name: pdf-newspaper-secret
         secret:
-          secretName: fulltextrss
+          secretName: pdf-newspaper
           items:
           - key: custom_config.php
             path: custom_config.php
-      # - name: fulltextrss-config
+      # - name: pdf-newspaper-config
       #   configMap:
-      #     name: fulltextrss-configmap
-      # - name: fulltextrss-data
+      #     name: pdf-newspaper-configmap
+      # - name: pdf-newspaper-data
       #   persistentVolumeClaim:
-      #     claimName: fulltextrss-data
-      - name: fulltextrss-data
+      #     claimName: pdf-newspaper-data
+      - name: pdf-newspaper-data
         emptyDir: {}
       - name: scripts-d
         projected:
           defaultMode: 500
           sources:
           - configMap:
-              name: copy-fulltextrss-scripts
+              name: copy-pdf-newspaper-scripts
               items:
               - key: copy.sh
                 path: copy.sh
