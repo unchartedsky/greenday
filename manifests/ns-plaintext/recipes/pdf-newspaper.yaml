@@ -87,7 +87,9 @@ data:
     cp -Rf --preserve=all pdf-newspaper-${PDF_NEWPAPER_VERSION}/* /var/www/html/
     cp -Rf --preserve=all tcpdf-fonts/* /var/www/html/fonts/
 
-    sed -i -e 's/dejavuserifcondensed/nanumgothiccodingb/g' /var/www/html/makepdf.php
+    sed -i -e 's/linlibertine_as/nanumsquareroundb/g' /var/www/html/makepdf.php
+    sed -i -e 's/helveticab/nanumsquareroundb/g' /var/www/html/makepdf.php
+    sed -i -e 's/dejavuserifcondensed/nanumsquareroundb/g' /var/www/html/makepdf.php
 
   run-nginx.sh: |
     #!/bin/bash -xe
