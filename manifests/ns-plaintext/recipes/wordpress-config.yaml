@@ -2559,6 +2559,13 @@ data:
         access_log off;
     }
 
+    location ^~ /.well-known/ {
+      allow all;
+      log_not_found off;
+      default_type "text/plain";
+    }
+
+
     # Deny all attempts to access hidden files such as .htaccess, .htpasswd, .DS_Store (Mac).
     # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
     location ~ /\. {

@@ -27,56 +27,56 @@ spec:
   selector:
     matchLabels:
       app: backup
-  replicas: 0
+  replicas: 1
   template:
     metadata:
       labels:
         app: backup
     spec:
       imagePullSecrets:
-      - name: github-andromedarabbit
+        - name: github-andromedarabbit
       securityContext:
         fsGroup: 999
       containers:
-      - name: backup-tester
-        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
-        imagePullPolicy: Always
-        command: [ "/bin/bash", "-c", "--" ]
-        args: [ "while true; do sleep 30; done;" ]
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1000
-        env:
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: backup
-              key: aws_access_key
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: backup
-              key: aws_secret_access_key
-        resources:
-          requests:
-            cpu: 30m
-            memory: 16Mi
-          limits:
-            cpu: 400m
-            memory: 512Mi
-        volumeMounts:
-        - name: scripts-d
-          mountPath: /scripts
+        - name: backup-tester
+          image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+          imagePullPolicy: Always
+          command: ["/bin/bash", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup
+                  key: aws_access_key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup
+                  key: aws_secret_access_key
+          resources:
+            requests:
+              cpu: 30m
+              memory: 16Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          volumeMounts:
+            - name: scripts-d
+              mountPath: /scripts
       volumes:
-      - name: scripts-d
-        projected:
-          defaultMode: 500
-          sources:
-          - configMap:
-              name: backup-scripts
-              items:
-              - key: run.sh
-                path: run.sh
+        - name: scripts-d
+          projected:
+            defaultMode: 0550
+            sources:
+              - configMap:
+                  name: backup-scripts
+                  items:
+                    - key: run.sh
+                      path: run.sh
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
@@ -97,50 +97,50 @@ spec:
             app: backup
         spec:
           imagePullSecrets:
-          - name: github-andromedarabbit
+            - name: github-andromedarabbit
           securityContext:
             fsGroup: 999
           containers:
-          - name: backup
-            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
-            args:
-            - /bin/bash
-            - -c
-            - "/scripts/run.sh"
-            securityContext:
-              runAsNonRoot: true
-              runAsUser: 1000
-            env:
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: backup
-                  key: aws_access_key
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: backup
-                  key: aws_secret_access_key
-            resources:
-              requests:
-                cpu: 30m
-                memory: 16Mi
-              limits:
-                cpu: 400m
-                memory: 512Mi
-            volumeMounts:
-            - name: scripts-d
-              mountPath: /scripts
+            - name: backup
+              image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+              args:
+                - /bin/bash
+                - -c
+                - "/scripts/run.sh"
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup
+                      key: aws_access_key
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup
+                      key: aws_secret_access_key
+              resources:
+                requests:
+                  cpu: 30m
+                  memory: 16Mi
+                limits:
+                  cpu: 400m
+                  memory: 512Mi
+              volumeMounts:
+                - name: scripts-d
+                  mountPath: /scripts
           volumes:
-          - name: scripts-d
-            projected:
-              defaultMode: 500
-              sources:
-              - configMap:
-                  name: backup-scripts
-                  items:
-                  - key: run.sh
-                    path: run.sh
+            - name: scripts-d
+              projected:
+                defaultMode: 0550
+                sources:
+                  - configMap:
+                      name: backup-scripts
+                      items:
+                        - key: run.sh
+                          path: run.sh
           restartPolicy: Never
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
