@@ -75,7 +75,7 @@ metadata:
 data:
   copy.sh: |
     #!/bin/bash -xe
-    export FEED_CREATOR_VERSION="1.5"
+    export FEED_CREATOR_VERSION="2.0"
 
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
