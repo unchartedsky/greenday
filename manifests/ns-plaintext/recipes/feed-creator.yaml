@@ -25,17 +25,17 @@ metadata:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   tls:
-  - hosts:
-    - createfeed.andromedarabbit.net
-    secretName: tls-feed-creator
+    - hosts:
+        - createfeed.andromedarabbit.net
+      secretName: tls-feed-creator
   rules:
-  - host: createfeed.andromedarabbit.net
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: feed-creator
-          servicePort: 80
+    - host: createfeed.andromedarabbit.net
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: feed-creator
+              servicePort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -46,9 +46,9 @@ metadata:
     app: feed-creator
 spec:
   ports:
-  - name: http
-    port: 80
-    targetPort: 80
+    - name: http
+      port: 80
+      targetPort: 80
   selector:
     app: feed-creator
 ---
@@ -75,7 +75,7 @@ metadata:
 data:
   copy.sh: |
     #!/bin/bash -xe
-    export FEED_CREATOR_VERSION="2.0"
+    export FEED_CREATOR_VERSION="2.1"
 
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
@@ -118,76 +118,76 @@ spec:
         app: feed-creator
     spec:
       imagePullSecrets:
-      - name: github-andromedarabbit
+        - name: github-andromedarabbit
       initContainers:
-      - name: copy
-        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
-        # command: ['sh', '-c', 'chmod -R g+rwX /opt/bitnami/wordpress']
-        args:
-        - /bin/bash
-        - -c
-        - "/scripts/copy.sh && /scripts/run-chown-php.sh"
-        env:
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: backup
-              key: aws_access_key
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: backup
-              key: aws_secret_access_key
-        volumeMounts:
-        - mountPath: /var/www/html
-          name: feed-creator-data
-        - name: scripts-d
-          mountPath: /scripts
+        - name: copy
+          image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
+          # command: ['sh', '-c', 'chmod -R g+rwX /opt/bitnami/wordpress']
+          args:
+            - /bin/bash
+            - -c
+            - "/scripts/copy.sh && /scripts/run-chown-php.sh"
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup
+                  key: aws_access_key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup
+                  key: aws_secret_access_key
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: feed-creator-data
+            - name: scripts-d
+              mountPath: /scripts
       containers:
-      - name: feed-creator
-        image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-          name: http
-        volumeMounts:
-        - mountPath: /var/www/html/custom_config.php
-          name: feed-creator-secret
-          subPath: custom_config.php
-        - mountPath: /var/www/html
-          name: feed-creator-data
-        readinessProbe:
-          tcpSocket:
-            port: http
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
+        - name: feed-creator
+          image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - mountPath: /var/www/html/custom_config.php
+              name: feed-creator-secret
+              subPath: custom_config.php
+            - mountPath: /var/www/html
+              name: feed-creator-data
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
       restartPolicy: Always
       volumes:
-      - name: feed-creator-secret
-        secret:
-          secretName: feed-creator
-          items:
-          - key: custom_config.php
-            path: custom_config.php
-      # - name: feed-creator-config
-      #   configMap:
-      #     name: feed-creator-configmap
-      # - name: feed-creator-data
-      #   persistentVolumeClaim:
-      #     claimName: feed-creator-data
-      - name: feed-creator-data
-        emptyDir: {}
-      - name: scripts-d
-        projected:
-          defaultMode: 500
-          sources:
-          - configMap:
-              name: copy-feed-creator-scripts
-              items:
-              - key: copy.sh
-                path: copy.sh
-              - key: run-chown-php.sh
-                path: run-chown-php.sh
+        - name: feed-creator-secret
+          secret:
+            secretName: feed-creator
+            items:
+              - key: custom_config.php
+                path: custom_config.php
+        # - name: feed-creator-config
+        #   configMap:
+        #     name: feed-creator-configmap
+        # - name: feed-creator-data
+        #   persistentVolumeClaim:
+        #     claimName: feed-creator-data
+        - name: feed-creator-data
+          emptyDir: {}
+        - name: scripts-d
+          projected:
+            defaultMode: 500
+            sources:
+              - configMap:
+                  name: copy-feed-creator-scripts
+                  items:
+                    - key: copy.sh
+                      path: copy.sh
+                    - key: run-chown-php.sh
+                      path: run-chown-php.sh
 # ---
 # apiVersion: v1
 # kind: PersistentVolumeClaim
