@@ -1,0 +1,122 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: n8n
+  namespace: n8n
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: http
+    nginx.ingress.kubernetes.io/proxy-body-size: 128m
+
+    cert-manager.io/issuer: letsencrypt-prod
+
+    # For Cloudflare proxied entries, set the TTL annotation to 1 (automatic), or do not set it.
+    external-dns.alpha.kubernetes.io/ttl: "1"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+spec:
+  tls:
+    - hosts:
+        - n8n.unchartedsky.com
+      secretName: tls-n8n
+  rules:
+    - host: n8n.unchartedsky.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: n8n
+              servicePort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  # type: NodePort
+  selector:
+    app: n8n
+  ports:
+    - protocol: TCP
+      port: 5678
+      targetPort: 5678
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  storageClassName: rook-nfs-default
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      containers:
+        - name: n8n
+          image: n8nio/n8n
+          ports:
+            - containerPort: 5678
+          env:
+            - name: N8N_BASIC_AUTH_ACTIVE
+              value: "true"
+            - name: N8N_BASIC_AUTH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: n8n
+                  key: N8N_BASIC_AUTH_USER
+            - name: N8N_BASIC_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n
+                  key: N8N_BASIC_AUTH_PASSWORD
+            - name: GENERIC_TIMEZONE
+              value: "Asia/Seoul"
+            - name: N8N_PORT
+              value: "5678"
+            - name: N8N_HOST
+              value: "0.0.0.0"
+            #   value: "n8n.unchartedsky.com"
+            # - name: N8N_PROTOCOL
+            #   value: "https"
+            - name: VUE_APP_URL_BASE_API
+              value: "http://n8n:5678"
+            - name: WEBHOOK_TUNNEL_URL
+              value: "https://n8n.unchartedsky.com/"
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: n8n
+                  key: N8N_ENCRYPTION_KEY
+          volumeMounts:
+            - name: data
+              mountPath: /root/
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1024Mi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: n8n

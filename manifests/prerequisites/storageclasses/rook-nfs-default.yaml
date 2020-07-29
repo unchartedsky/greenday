@@ -3,7 +3,7 @@ kind: StorageClass
 metadata:
   labels:
     app: rook-nfs
-  name: rook-nfs-share1
+  name: rook-nfs-default
 parameters:
   exportName: share1
   nfsServerName: rook-nfs
