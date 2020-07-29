@@ -12,6 +12,6 @@
     "ms-kubernetes-tools.vscode-kubernetes-tools",
     "redhat.vscode-yaml",
     "int-tt.vscode-sops",
-    "mauve.terraform"
+    "hashicorp.terraform"
   ]
 }
