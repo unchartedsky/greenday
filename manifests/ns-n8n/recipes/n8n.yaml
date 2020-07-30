@@ -25,7 +25,7 @@ spec:
           - path: /
             backend:
               serviceName: n8n
-              servicePort: 5678
+              servicePort: 5679
 ---
 apiVersion: v1
 kind: Service
@@ -38,8 +38,8 @@ spec:
     app: n8n
   ports:
     - protocol: TCP
-      port: 5678
-      targetPort: 5678
+      port: 5679
+      targetPort: 5679
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -77,7 +77,7 @@ spec:
             - containerPort: 5678
           env:
             - name: N8N_BASIC_AUTH_ACTIVE
-              value: "true"
+              value: "false"
             - name: N8N_BASIC_AUTH_USER
               valueFrom:
                 secretKeyRef:
@@ -116,6 +116,29 @@ spec:
             limits:
               cpu: "2000m"
               memory: "1024Mi"
+        - name: oauth2-proxy
+          image: quay.io/pusher/oauth2_proxy:latest
+          imagePullPolicy: Always
+          args:
+            - "--email-domain=*"
+            - "--github-org=unchartedsky"
+            - "--github-team=team7"
+            - "--upstream=http://0.0.0.0:5678"
+            - "--approval-prompt=auto"
+            - "--redirect-url=https://n8n.unchartedsky.com/oauth2/callback"
+            - "--cookie-secret=$(COOKIE_SECRET)"
+            - "--cookie-secure=false"
+            - "--cookie-refresh=1h"
+            - "--cookie-name=_oauth2_proxy_n8n_unchartedsky_com"
+            - "--provider=github"
+            - "--client-id=$(OAUTH_CLIENT_ID)"
+            - "--client-secret=$(OAUTH_SECRET_KEY)"
+            - "--http-address=0.0.0.0:5679"
+          envFrom:
+            - secretRef:
+                name: n8n
+          ports:
+            - containerPort: 5679
       volumes:
         - name: data
           persistentVolumeClaim:
