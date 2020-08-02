@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mariadb
-  namespace: wordpress
+  namespace: rabbit
   labels:
     app: "mariadb"
     component: "master"
@@ -65,7 +65,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mariadb-tests
-  namespace: wordpress
+  namespace: rabbit
 data:
   run.sh: |-
     @test "Testing MariaDB is accessible" {
@@ -77,7 +77,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mariadb
-  namespace: wordpress
+  namespace: rabbit
   labels:
     app: "mariadb"
     component: "master"
@@ -100,7 +100,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mariadb
-  namespace: wordpress
+  namespace: rabbit
   labels:
     app: mariadb
     chart: mariadb-7.0.1
@@ -126,6 +126,9 @@ spec:
         component: master
     spec:
       serviceAccountName: default
+      # securityContext:
+      #   fsGroup: 1001
+      #   runAsUser: 1001
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -140,6 +143,8 @@ spec:
         - name: "mariadb"
           image: docker.io/bitnami/mariadb:10.3.20-debian-9-r0
           imagePullPolicy: "IfNotPresent"
+          # command: ["/bin/bash", "-c", "--"]
+          # args: ["while true; do sleep 30; done;"]
           env:
             - name: MARIADB_ROOT_PASSWORD
               valueFrom:
@@ -209,8 +214,9 @@ spec:
           release: "team7"
           heritage: "Helm"
       spec:
+        storageClassName: rook-nfs-default
         accessModes:
-          - "ReadWriteOnce"
+          - ReadWriteMany
         resources:
           requests:
             storage: "1Gi"

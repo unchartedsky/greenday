@@ -1,0 +1,301 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: wordpress
+  namespace: rabbit
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: https
+    nginx.ingress.kubernetes.io/proxy-body-size: 128m
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: 120s
+    nginx.ingress.kubernetes.io/proxy-send-timeout: 120s
+    nginx.ingress.kubernetes.io/proxy-read-timeout: 120s
+
+    cert-manager.io/issuer: letsencrypt-prod
+
+    # For Cloudflare proxied entries, set the TTL annotation to 1 (automatic), or do not set it.
+    external-dns.alpha.kubernetes.io/ttl: "1"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  tls:
+    - hosts:
+        - journal.andromedarabbit.net
+      secretName: tls-wordpress
+  rules:
+    - host: journal.andromedarabbit.net
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: wordpress
+              servicePort: 443
+---
+# Source: wordpress/templates/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: wordpress
+  namespace: rabbit
+  labels:
+    app: "wordpress"
+    chart: "wordpress-8.0.1"
+    release: "team7"
+    heritage: "Helm"
+spec:
+  storageClassName: rook-nfs-default
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: "2Gi"
+---
+# Source: wordpress/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  namespace: rabbit
+  labels:
+    app: "wordpress"
+    chart: "wordpress-8.0.1"
+    release: "team7"
+    heritage: "Helm"
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      # protocol: TCP
+    - name: https
+      port: 443
+      targetPort: https
+    #   # protocol: TCP
+  selector:
+    app: "wordpress"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-scripts
+  namespace: rabbit
+data:
+  go.sh: |
+    #!/bin/bash -xe
+    mkdir -p /opt/bitnami/nginx/conf/snippets
+
+    cp -f /opt/tmp-secrets/newrelic.ini /opt/bitnami/php/conf/conf.d/
+    cp -f /opt/tmp-configs/php.ini /opt/bitnami/php/etc/
+    cp -f /opt/tmp-configs/www.conf /opt/bitnami/php/etc/php-fpm.d/
+    cp -f /opt/tmp-configs/php-upstream.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/http.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/https.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-proxy-cache.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-fastcgi-cache.conf /opt/bitnami/nginx/conf/server_blocks/
+    cp -f /opt/tmp-configs/nginx-fastcgi-cache-serverblock.conf /opt/bitnami/nginx/conf/snippets/
+    cp -f /opt/tmp-configs/nginx-php.conf /opt/bitnami/nginx/conf/snippets/
+    cp -f /opt/tmp-configs/nginx-restrictions.conf /opt/bitnami/nginx/conf/snippets/
+
+    cp -f /opt/tmp-secrets/nginx-allowed.conf /opt/bitnami/nginx/conf/snippets/nginx-allowed.conf
+    cat >>/opt/bitnami/nginx/conf/snippets/nginx-allowed.conf <<EOL
+
+
+    # Internal IP Addresses
+    EOL
+    sed -e 's/^\(.*\)$/allow \1;/' /opt/tmp-ip-addresses/*.txt >> /opt/bitnami/nginx/conf/snippets/nginx-allowed.conf
+
+    cp -f /opt/tmp-configs/nginx.conf /opt/bitnami/nginx/conf/
+    cp -f /opt/tmp-configs/wpcron /etc/cron.d/
+
+    /app-entrypoint.sh /run.sh
+
+---
+# Source: wordpress/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  namespace: rabbit
+  labels:
+    app: "wordpress"
+    chart: "wordpress-8.0.1"
+    release: "team7"
+    heritage: "Helm"
+spec:
+  selector:
+    matchLabels:
+      app: "wordpress"
+      release: "team7"
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: "wordpress"
+        chart: "wordpress-8.0.1"
+        release: "team7"
+    spec:
+      # securityContext:
+      #   runAsUser: 0
+      #   runAsGroup: 0
+      #   fsGroup: 0
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "status.localhost"
+      initContainers:
+        - name: volume-permissions
+          image: busybox
+          command: ["sh", "-c", "chmod -R g+rwX /opt/bitnami/wordpress"]
+          # securityContext:
+          #   runAsUser: 0
+          #   runAsGroup: 1
+          #   allowPrivilegeEscalation: true
+          volumeMounts:
+            - mountPath: /opt/bitnami/wordpress
+              name: wordpress-data
+            - name: wordpress-config
+              mountPath: /opt/tmp/wordpress-vhosts.conf
+              subPath: wordpress-vhosts.conf
+      imagePullSecrets:
+        - name: github-andromedarabbit
+      containers:
+        - name: wordpress
+          image: docker.pkg.github.com/unchartedsky/bitnami/wordpress-nginx:5.3.2-debian-10-r5
+          imagePullPolicy: "Always"
+          # securityContext:
+          #   runAsUser: 1001
+          #   runAsGroup: 1
+          #   allowPrivilegeEscalation: true
+          args:
+            - /scripts/go.sh
+          # command: ["/bin/sh"]
+          # args: ["-c", "while true; do echo hello; sleep 10; done"]
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - "sh"
+                  - "-c"
+                  - >
+                    /usr/bin/crontab /etc/cron.d/wpcron && /usr/sbin/cron -n;
+          env:
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "no"
+            - name: MARIADB_HOST
+              value: mariadb
+            - name: MARIADB_PORT_NUMBER
+              value: "3306"
+            - name: WORDPRESS_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb
+                  key: mariadb-database
+            - name: WORDPRESS_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb
+                  key: mariadb-username
+            - name: WORDPRESS_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb
+                  key: mariadb-password
+            - name: WORDPRESS_USERNAME
+              value: "plaintext"
+            - name: WORDPRESS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress
+                  key: wordpress-password
+            - name: WORDPRESS_EMAIL
+              value: "plaintext@andromedarabbit.net"
+            - name: WORDPRESS_FIRST_NAME
+              value: "Jaehoon"
+            - name: WORDPRESS_LAST_NAME
+              value: "Choi"
+            - name: WORDPRESS_HTACCESS_OVERRIDE_NONE
+              value: "no"
+            - name: WORDPRESS_BLOG_NAME
+              value: "Plaintext"
+            - name: WORDPRESS_SKIP_INSTALL
+              value: "yes"
+            - name: WORDPRESS_TABLE_PREFIX
+              value: "wp_"
+            - name: WORDPRESS_SCHEME
+              value: "https"
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          livenessProbe:
+            httpGet:
+              path: /wp-login.php
+              port: http
+            failureThreshold: 6
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /wp-login.php
+              port: http
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          volumeMounts:
+            - mountPath: /bitnami/wordpress
+              name: wordpress-data
+              subPath: wordpress
+            - name: wordpress-config
+              mountPath: /opt/tmp-configs
+            - name: wordpress-secret
+              mountPath: /opt/tmp-secrets
+            - name: tls-config
+              mountPath: /opt/tls
+            - name: scripts-d
+              mountPath: /scripts
+            - name: ip-addresses
+              mountPath: /opt/tmp-ip-addresses
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 3000m
+              memory: 3072Mi
+      volumes:
+        - name: wordpress-data
+          persistentVolumeClaim:
+            claimName: wordpress
+        - name: wordpress-config
+          configMap:
+            name: wordpress-config
+        - name: wordpress-secret
+          secret:
+            secretName: wordpress
+            items:
+              - key: newrelic.ini
+                path: newrelic.ini
+              - key: nginx-allowed.conf
+                path: nginx-allowed.conf
+        - name: tls-config
+          secret:
+            secretName: tls-wordpress
+        - name: scripts-d
+          projected:
+            defaultMode: 500
+            sources:
+              - configMap:
+                  name: wordpress-scripts
+                  items:
+                    - key: go.sh
+                      path: go.sh
+        - name: ip-addresses
+          secret:
+            secretName: ip-addresses

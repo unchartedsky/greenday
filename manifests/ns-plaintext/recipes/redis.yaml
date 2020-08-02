@@ -34,58 +34,58 @@ spec:
         fsGroup: 1001
         runAsUser: 1001
       containers:
-      - name: redis
-        image: "bitnami/redis:5.0.0-r0"
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: ALLOW_EMPTY_PASSWORD
-          value: "yes"
-        - name: DISABLE_COMMANDS
-          value: ""
-        ports:
         - name: redis
-          containerPort: 6379
-        livenessProbe:
-          exec:
-            command:
-            - redis-cli
-            - ping
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
-        readinessProbe:
-          exec:
-            command:
-            - redis-cli
-            - ping
-          initialDelaySeconds: 5
-          timeoutSeconds: 1
-        resources:
-          requests:
-            cpu: 100m
-            memory: 64Mi
-          limits:
-            cpu: 1000m
-            memory: 1024Mi
-        # volumeMounts:
-        # - name: redis-data
-        #   mountPath: /bitnami
-        #   subPath:
-      - name: metrics
-        image: "oliver006/redis_exporter:v0.11"
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: REDIS_ALIAS
-          value: redis
-        ports:
+          image: "bitnami/redis:5.0.0-r0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+            - name: DISABLE_COMMANDS
+              value: ""
+          ports:
+            - name: redis
+              containerPort: 6379
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 32Mi
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+          # volumeMounts:
+          # - name: redis-data
+          #   mountPath: /bitnami
+          #   subPath:
         - name: metrics
-          containerPort: 9121
-        resources:
-          requests:
-            cpu: 30m
-            memory: 32Mi
-          limits:
-            cpu: 100m
-            memory: 64Mi
+          image: "oliver006/redis_exporter:v0.11"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REDIS_ALIAS
+              value: redis
+          ports:
+            - name: metrics
+              containerPort: 9121
+          resources:
+            requests:
+              cpu: 30m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
       # volumes:
       # - name: redis-data
       #   persistentVolumeClaim:
@@ -105,12 +105,12 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: redis
-    port: 6379
-    targetPort: redis
-  - name: metrics
-    port: 9121
-    targetPort: metrics
+    - name: redis
+      port: 6379
+      targetPort: redis
+    - name: metrics
+      port: 9121
+      targetPort: metrics
   selector:
     app: redis
 ---
@@ -125,11 +125,11 @@ spec:
     matchLabels:
       app: redis
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: wordpress
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: monitoring
+    - from:
+        - podSelector:
+            matchLabels:
+              app: wordpress
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
