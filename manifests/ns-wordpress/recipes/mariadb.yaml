@@ -114,7 +114,7 @@ spec:
       release: team7
       component: master
   serviceName: mariadb
-  replicas: 1
+  replicas: 0
   updateStrategy:
     type: RollingUpdate
   template:
