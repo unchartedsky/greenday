@@ -1,0 +1,112 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: rsshub
+  namespace: rsshub
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: http
+    nginx.ingress.kubernetes.io/proxy-body-size: 128m
+    nginx.ingress.kubernetes.io/server-snippet: |
+      set $agentflag 0;
+
+      if ($http_user_agent ~* "(Feedly)" ){
+        set $agentflag 1;
+      }
+
+      if ($http_user_agent ~* "(Mozilla)" ){
+        set $agentflag 1;
+      }
+
+      if ( $agentflag = 0 ) {
+        return 403;
+      }
+
+    cert-manager.io/issuer: letsencrypt-prod
+
+    # For Cloudflare proxied entries, set the TTL annotation to 1 (automatic), or do not set it.
+    external-dns.alpha.kubernetes.io/ttl: "1"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  tls:
+  - hosts:
+    - rsshub.andromedarabbit.net
+    secretName: tls-rsshub
+  rules:
+  - host: rsshub.andromedarabbit.net
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: rsshub
+          servicePort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rsshub
+  namespace: rsshub
+  labels:
+    app: rsshub
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 1200
+  selector:
+    app: rsshub
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rsshub
+  namespace: rsshub
+  labels:
+    app: rsshub
+spec:
+  selector:
+    matchLabels:
+      app: rsshub
+  replicas: 1
+  # strategy:
+  #   type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rsshub
+    spec:
+      # imagePullSecrets:
+      # - name: github-andromedarabbit
+      containers:
+      - name: rsshub
+        image: diygod/rsshub:latest
+        imagePullPolicy: Always
+        env:
+          - name: TZ
+            value: "TZ/Seoul"
+          - name: CACHE_TYPE
+            value: redis
+          - name: REDIS_URL
+            value: 'redis://redis:6379/'
+          - name: PUPPETEER_WS_ENDPOINT
+            value: 'ws://browserless:3000'
+          # - name: ALLOW_ORIGIN
+          #   value: "*"
+          - name: DEBUG_INFO
+            value: "true"
+          - name: LOGGER_LEVEL
+            value: debug
+          - name: YOUTUBE_KEY
+            valueFrom:
+                secretKeyRef:
+                  name: rsshub
+                  key: YOUTUBE_KEY
+        ports:
+        - containerPort: 1200
+          name: http
+        readinessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+      restartPolicy: Always

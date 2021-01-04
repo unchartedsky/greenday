@@ -14,6 +14,10 @@ metadata:
         set $agentflag 1;
       }
 
+      if ($http_user_agent ~* "(Mozilla)" ){
+        set $agentflag 1;
+      }
+
       if ( $agentflag = 0 ) {
         return 403;
       }

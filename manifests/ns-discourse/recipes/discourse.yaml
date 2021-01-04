@@ -107,7 +107,7 @@ spec:
         - name: github-andromedarabbit
       initContainers:
         - name: db-migrations
-          image: docker.pkg.github.com/unchartedsky/discourse/discourse:20ac4fa
+          image: docker.pkg.github.com/unchartedsky/discourse/discourse:e036932
           imagePullPolicy: Always
           command:
             - bash
@@ -139,7 +139,7 @@ spec:
               value: forum.unchartedsky.com
       containers:
         - name: web
-          image: docker.pkg.github.com/unchartedsky/discourse/discourse:d090c52
+          image: docker.pkg.github.com/unchartedsky/discourse/discourse:e036932
           imagePullPolicy: IfNotPresent
           command: ["/sbin/boot"]
           ports:
