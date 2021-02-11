@@ -132,7 +132,7 @@ spec:
       - name: github-andromedarabbit
       initContainers:
       - name: copy
-        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:fd216d4
+        image: ghcr.io/unchartedsky/macgyver:fd216d4
         # command: ['sh', '-c', 'chmod -R g+rwX /opt/bitnami/wordpress']
         args:
         - /bin/bash
@@ -156,7 +156,7 @@ spec:
           mountPath: /scripts
       containers:
       - name: pdf-newspaper
-        image: docker.pkg.github.com/unchartedsky/dockers/fulltextrss-base:latest
+        image: ghcr.io/unchartedsky/fulltextrss-base:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

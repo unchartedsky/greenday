@@ -5472,7 +5472,7 @@ metadata:
     helm.sh/chart: cert-manager-v0.12.0
 ---
 # Source: cert-manager/templates/cainjector-rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-cainjector
@@ -5502,7 +5502,7 @@ rules:
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "watch", "update"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-cainjector
@@ -5523,7 +5523,7 @@ subjects:
 
 ---
 # leader election rules
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: cert-manager-cainjector:leaderelection
@@ -5545,7 +5545,7 @@ rules:
 
 # grant cert-manager permission to manage the leaderelection configmap in the
 # leader election namespace
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cert-manager-cainjector:leaderelection
@@ -5571,7 +5571,7 @@ subjects:
 ---
 # apiserver gets the auth-delegator role to delegate auth decisions to
 # the core apiserver
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-webhook:auth-delegator
@@ -5596,7 +5596,7 @@ subjects:
 # apiserver gets the ability to read authentication. This allows it to
 # read the specific configmap that has the requestheader-* entries to
 # api agg
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cert-manager-webhook:webhook-authentication-reader
@@ -5641,7 +5641,7 @@ rules:
   - create
 ---
 # Source: cert-manager/templates/rbac.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: cert-manager:leaderelection
@@ -5663,7 +5663,7 @@ rules:
 
 # grant cert-manager permission to manage the leaderelection configmap in the
 # leader election namespace
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cert-manager:leaderelection
@@ -5687,7 +5687,7 @@ subjects:
 ---
 
 # Issuer controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-issuers
@@ -5714,7 +5714,7 @@ rules:
 ---
 
 # ClusterIssuer controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-clusterissuers
@@ -5741,7 +5741,7 @@ rules:
 ---
 
 # Certificates controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-certificates
@@ -5777,7 +5777,7 @@ rules:
 ---
 
 # Orders controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-orders
@@ -5816,7 +5816,7 @@ rules:
 ---
 
 # Challenges controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-challenges
@@ -5868,7 +5868,7 @@ rules:
 ---
 
 # ingress-shim controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-ingress-shim
@@ -5900,7 +5900,7 @@ rules:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-issuers
@@ -5921,7 +5921,7 @@ subjects:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-clusterissuers
@@ -5942,7 +5942,7 @@ subjects:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-certificates
@@ -5963,7 +5963,7 @@ subjects:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-orders
@@ -5984,7 +5984,7 @@ subjects:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-challenges
@@ -6005,7 +6005,7 @@ subjects:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-ingress-shim

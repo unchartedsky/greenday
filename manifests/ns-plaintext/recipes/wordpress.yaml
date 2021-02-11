@@ -166,7 +166,7 @@ spec:
       - name: github-andromedarabbit
       containers:
       - name: wordpress
-        image: docker.pkg.github.com/unchartedsky/bitnami/wordpress-nginx:5.3.2-debian-10-r5
+        image: ghcr.io/unchartedsky/wordpress-nginx:5.3.2-debian-10-r5
         imagePullPolicy: "IfNotPresent"
         args:
         - /scripts/go.sh

@@ -37,7 +37,7 @@ spec:
         fsGroup: 999
       containers:
         - name: backup-tester
-          image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+          image: ghcr.io/unchartedsky/macgyver:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c", "--"]
           args: ["while true; do sleep 30; done;"]
@@ -100,7 +100,7 @@ spec:
             fsGroup: 999
           containers:
             - name: backup
-              image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+              image: ghcr.io/unchartedsky/macgyver:latest
               args:
                 - /bin/bash
                 - -c

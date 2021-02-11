@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: macgyver
   namespace: kube-system
+imagePullSecrets:
+  - name: github-andromedarabbit
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -96,7 +98,7 @@ metadata:
   name: macgyver
   namespace: kube-system
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: macgyver
@@ -105,14 +107,12 @@ spec:
       labels:
         app: macgyver
     spec:
-      imagePullSecrets:
-      - name: github-andromedarabbit
       serviceAccountName: macgyver
       securityContext:
         fsGroup: 999
       containers:
       - name: macgyver
-        image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+        image: ghcr.io/unchartedsky/macgyver:latest
         imagePullPolicy: IfNotPresent
         command: [ "/bin/bash", "-c", "--" ]
         args: [ "while true; do sleep 30; done;" ]
@@ -158,14 +158,12 @@ spec:
           labels:
             app: macgyver
         spec:
-          imagePullSecrets:
-          - name: github-andromedarabbit
           serviceAccountName: macgyver
           securityContext:
             fsGroup: 999
           containers:
           - name: macgyver
-            image: docker.pkg.github.com/unchartedsky/macgyver/macgyver:latest
+            image: ghcr.io/unchartedsky/macgyver:latest
             imagePullPolicy: IfNotPresent
             args:
             - /bin/bash
