@@ -26,7 +26,7 @@ jobs:
 
         packer -v
       env:
-        PACKER_VERSION: "1.5.1"
+        PACKER_VERSION: "1.6.6"
     - name: Packer
       run: |
         cd packer
