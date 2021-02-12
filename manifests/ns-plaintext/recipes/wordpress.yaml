@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: wordpress
@@ -23,9 +23,12 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: wordpress
-          servicePort: 443
+          service:
+            name: wordpress
+            port:
+              number: 443
 ---
 # Source: wordpress/templates/pvc.yaml
 kind: PersistentVolumeClaim
