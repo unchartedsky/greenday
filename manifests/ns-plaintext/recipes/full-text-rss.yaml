@@ -79,7 +79,7 @@ metadata:
 data:
   copy.sh: |
     #!/bin/bash -xe
-    export FULLTEXTRSS_VERSION="3.9.7"
+    export FULLTEXTRSS_VERSION="3.9.9"
 
     mc config host add s3 https://sgp1.digitaloceanspaces.com "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
 
