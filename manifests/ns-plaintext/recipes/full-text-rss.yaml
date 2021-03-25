@@ -104,7 +104,27 @@ data:
     #!/bin/bash -xe
     chmod -R g+rwX /var/www/html
     chown -R www-data:www-data /var/www/html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fulltextrss-site-config
+  namespace: plaintext
+data:
+  m.blog.naver.com.txt: |
+    title: //meta[@property='og:title']
+    body: //div[@class='se-main-container']
+    tidy: no
+    prune: no
+    test_url: https://m.blog.naver.com/ldk27/222286793132
 
+  # blog.naver.com.txt: |
+  #   title: //span[@class='pcol1 itemSubjectBoldfont']
+  #   body: //div[@id='postListBody']
+  #   date: //p[@class='date fil5 pcol2']
+  #   single_page_link: /html/frameset/frame[1]/attribute::src
+  #   strip: //div[@class='post-btn']
+  #   test_url: http://blog.naver.com/how2invest/110135068757
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -164,6 +184,8 @@ spec:
         - mountPath: /var/www/html/custom_config.php
           name: fulltextrss-secret
           subPath: custom_config.php
+        - mountPath: /var/www/html/site_config/custom
+          name: fulltextrss-site-config
         - mountPath: /var/www/html
           name: fulltextrss-data
         readinessProbe:
@@ -179,9 +201,9 @@ spec:
           items:
           - key: custom_config.php
             path: custom_config.php
-      # - name: fulltextrss-config
-      #   configMap:
-      #     name: fulltextrss-configmap
+      - name: fulltextrss-site-config
+        configMap:
+          name: fulltextrss-site-config
       # - name: fulltextrss-data
       #   persistentVolumeClaim:
       #     claimName: fulltextrss-data
