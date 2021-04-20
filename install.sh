@@ -11,14 +11,14 @@ OSTYPE=$(uname)
 case "$OSTYPE" in
   Darwin)  export THIS_OS="darwin" ;;
   Linux) export THIS_OS="linux" ;;
-  *) echo "Your Operating System '$THIS_OS' is not supported." && exit 1 ;;
+  *) echo "Your Operating System '$OSTYPE' is not supported." && exit 1 ;;
 esac
 
 ARCHITECTURE=$(uname -m)
 case "$ARCHITECTURE" in
   amd64)  export ARCH="amd64" ;;
   x86_64) export ARCH="amd64" ;;
-  *) echo "Your Architecture '$ARCH' is not supported."  && exit 2 ;;
+  *) echo "Your Architecture '$ARCHITECTURE' is not supported."  && exit 2 ;;
 esac
 
 getshell() {
